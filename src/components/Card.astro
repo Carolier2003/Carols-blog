@@ -3,7 +3,6 @@ import type { CollectionEntry } from "astro:content";
 import { slugifyStr } from "@/utils/slugify";
 import { getPath } from "@/utils/getPath";
 import Datetime from "./Datetime.astro";
-import ViewCounter from "./ViewCounter.astro";
 
 type Props = {
   variant?: "h2" | "h3";
@@ -12,9 +11,6 @@ type Props = {
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;
 
 const { title, description, ...props } = data;
-
-// 生成文章 slug 用于浏览量统计
-const articleSlug = getPath(id, filePath, false).replace(/^\//, "");
 ---
 
 <li class="my-6">
@@ -34,7 +30,6 @@ const articleSlug = getPath(id, filePath, false).replace(/^\//, "");
   </a>
   <div class="mt-1 flex items-center gap-3 text-sm">
     <Datetime {...props} />
-    <ViewCounter slug={articleSlug} variant="compact" />
   </div>
   <p class="mt-2">{description}</p>
 </li>
