@@ -32,9 +32,9 @@ const articleSlug = getPath(id, filePath, false).replace(/^\//, "");
       {title}
     </Heading>
   </a>
-  <div class="mt-1 flex items-center gap-3 text-sm text-muted">
+  <div class="mt-1 flex items-center gap-3 text-sm">
     <Datetime {...props} />
-    <span class="text-border">•</span>
+    <span class="text-muted">•</span>
     <ViewCounter slug={articleSlug} variant="compact" />
   </div>
   <p class="mt-2">{description}</p>
