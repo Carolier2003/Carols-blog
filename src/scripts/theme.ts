@@ -37,7 +37,11 @@ function reflectPreference(): void {
     "iframe.giscus-frame"
   );
   if (giscusFrame) {
-    const giscusTheme = themeValue === "dark" ? "noborder_dark" : "noborder_light";
+    const baseUrl = "https://blog.kon-carol.xyz";
+    const giscusTheme =
+      themeValue === "dark"
+        ? `${baseUrl}/giscus-dark.css`
+        : `${baseUrl}/giscus-light.css`;
     giscusFrame.contentWindow?.postMessage(
       { giscus: { setConfig: { theme: giscusTheme } } },
       "https://giscus.app"
