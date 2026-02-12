@@ -41,6 +41,12 @@ function formatCount(num: number): string {
 </span>
 
 <script define:vars={{ API_BASE }}>
+  // 防止重复初始化：如果已经初始化过，直接跳过
+  if (window.__viewCounterInit) {
+    return;
+  }
+  window.__viewCounterInit = true;
+
   // 格式化数字显示 (如: 1200 -> 1.2k)
   function formatCount(num) {
     if (num >= 1000000) {
@@ -52,52 +58,115 @@ function formatCount(num: number): string {
     return num.toString();
   }
 
-  // 获取所有浏览量计数器元素
-  const counters = document.querySelectorAll(".view-counter");
+  // 从 sessionStorage 读取缓存
+  function getCachedViews() {
+    try {
+      const cached = sessionStorage.getItem("viewCounts");
+      const timestamp = sessionStorage.getItem("viewCountsTimestamp");
+      // 缓存 5 分钟
+      if (cached && timestamp && Date.now() - parseInt(timestamp) < 5 * 60 * 1000) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.debug("Failed to read cache:", e);
+    }
+    return {};
+  }
 
-  // 批量获取浏览量
+  // 写入缓存
+  function setCachedViews(views) {
+    try {
+      sessionStorage.setItem("viewCounts", JSON.stringify(views));
+      sessionStorage.setItem("viewCountsTimestamp", Date.now().toString());
+    } catch (e) {
+      console.debug("Failed to write cache:", e);
+    }
+  }
+
+  // 批量获取浏览量（只执行一次）
   async function fetchViewCounts() {
+    // 获取所有浏览量计数器元素（每次执行时动态获取，确保获取到所有实例）
+    const counters = document.querySelectorAll(".view-counter");
     const slugs = [];
-    const elements = [];
+    const slugToElements = new Map();
 
     counters.forEach((el) => {
       const slug = el.dataset.slug;
       if (slug) {
         slugs.push(slug);
-        elements.push(el);
+        if (!slugToElements.has(slug)) {
+          slugToElements.set(slug, []);
+        }
+        slugToElements.get(slug).push(el);
       }
     });
 
     if (slugs.length === 0) return;
 
-    // 逐个获取（因为 API 目前只支持单个查询）
-    for (let i = 0; i < slugs.length; i++) {
-      const slug = slugs[i];
-      const el = elements[i];
+    // 先去重，避免重复查询
+    const uniqueSlugs = [...new Set(slugs)];
 
+    // 先尝试从缓存读取
+    const cachedViews = getCachedViews();
+    const slugsToFetch = [];
+    const result = { ...cachedViews };
+
+    uniqueSlugs.forEach(slug => {
+      if (cachedViews[slug] === undefined) {
+        slugsToFetch.push(slug);
+      }
+    });
+
+    // 如果有需要查询的 slug，批量获取
+    if (slugsToFetch.length > 0) {
       try {
-        const response = await fetch(`${API_BASE}/api/views/${encodeURIComponent(slug)}`);
+        const response = await fetch(`${API_BASE}/api/views/batch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slugs: slugsToFetch })
+        });
+
         if (response.ok) {
           const data = await response.json();
-          if (data.success) {
-            const countEl = el.querySelector(".count");
-            if (countEl) {
-              countEl.textContent = formatCount(data.view_count);
-            }
+          if (data.success && data.views) {
+            // 合并到结果
+            Object.assign(result, data.views);
+            // 更新缓存
+            Object.assign(cachedViews, data.views);
+            setCachedViews(cachedViews);
           }
         }
       } catch (error) {
-        // 静默失败，保持显示初始值
-        console.debug("Failed to fetch view count:", error);
+        console.debug("Failed to fetch batch view counts:", error);
       }
     }
+
+    // 更新所有计数器显示
+    uniqueSlugs.forEach(slug => {
+      const elements = slugToElements.get(slug);
+      const count = result[slug] ?? 0;
+      elements?.forEach(el => {
+        const countEl = el.querySelector(".count");
+        if (countEl) {
+          countEl.textContent = formatCount(count);
+        }
+      });
+    });
   }
 
-  // 页面加载后获取浏览量
+  // 页面加载后获取浏览量（使用 requestIdleCallback 延迟执行，优先保证页面渲染）
+  const scheduleFetch = () => {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(fetchViewCounts, { timeout: 2000 });
+    } else {
+      setTimeout(fetchViewCounts, 100);
+    }
+  };
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", fetchViewCounts);
+    document.addEventListener("DOMContentLoaded", scheduleFetch);
   } else {
-    fetchViewCounts();
+    scheduleFetch();
   }
 </script>
 
