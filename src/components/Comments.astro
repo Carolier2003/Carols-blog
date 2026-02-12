@@ -160,7 +160,7 @@ const apiBase = "https://api.kon-carol.xyz";
         <div class="comment" id="comment-${comment.id}">
           <img src="${comment.avatar_url}" alt="" class="avatar" loading="lazy" />
           <div class="content">
-            <div class="meta">
+            <div class="comment-header">
               <span class="name">${this.escapeHtml(comment.author_name)}</span>
               <span class="time">${date}</span>
             </div>
@@ -261,313 +261,356 @@ const apiBase = "https://api.kon-carol.xyz";
 </script>
 
 <style is:global>
+  /* ========================================
+     GitHub Discussions Style Comments
+     ======================================== */
+
   .comments-section {
-    margin-top: 4rem;
-    padding-top: 2rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
     border-top: 1px solid var(--border);
-    font-size: 0.9375rem;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
+  /* Header */
   .section-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     color: var(--foreground);
   }
 
   .section-header h3 {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 600;
     margin: 0;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
   }
 
   .count {
     color: var(--muted);
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 400;
   }
 
-  /* 评论列表 - 简洁现代风格 */
+  /* Comments List */
   .comments-list {
-    margin-bottom: 2.5rem;
-    display: flex;
-    flex-direction: column;
+    margin-bottom: 2rem;
   }
 
   .loading,
   .empty {
     color: var(--muted);
-    font-size: 0.9375rem;
-    padding: 2.5rem 0;
-    text-align: left;
+    font-size: 14px;
+    padding: 2rem;
+    text-align: center;
+    background: var(--background);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
   }
 
+  /* Individual Comment - GitHub Style */
   .comment {
     display: flex;
-    gap: 1rem;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--border);
-    transition: opacity 0.2s ease;
+    gap: 12px;
+    padding: 16px 0;
+    position: relative;
   }
 
-  .comment:last-child {
-    border-bottom: none;
+  .comment:first-child {
+    padding-top: 0;
   }
 
-  .comment:hover {
-    opacity: 0.9;
-  }
-
+  /* Avatar */
   .avatar {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     flex-shrink: 0;
-    box-shadow: 0 0 0 1px var(--border);
-    transition: box-shadow 0.2s ease;
+    border: 1px solid var(--border);
+    background: var(--background);
+    transition: transform 0.2s ease;
   }
 
-  .comment:hover .avatar {
-    box-shadow: 0 0 0 2px var(--accent);
+  .avatar:hover {
+    transform: scale(1.05);
   }
 
+  /* Content Area */
   .content {
     flex: 1;
     min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--background);
   }
 
-  .meta {
+  /* Comment Header - Username + Timestamp */
+  .comment-header {
     display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-bottom: 0.375rem;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(var(--accent-rgb, 0, 0, 0), 0.03);
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
   }
 
   .name {
     font-weight: 600;
     color: var(--foreground);
-    font-size: 0.9375rem;
-    letter-spacing: -0.01em;
+    font-size: 14px;
   }
 
   .time {
-    font-size: 0.8125rem;
+    font-size: 12px;
     color: var(--muted);
     font-weight: 400;
   }
 
   .time::before {
     content: "·";
-    margin-right: 0.5rem;
-    color: var(--border);
+    margin-right: 4px;
   }
 
+  /* Comment Body */
   .text {
     color: var(--foreground);
-    line-height: 1.75;
+    line-height: 1.6;
     word-break: break-word;
-    font-size: 0.9375rem;
-    margin-bottom: 0.75rem;
-    opacity: 0.9;
+    font-size: 14px;
+    padding: 12px 16px;
   }
 
+  .text p {
+    margin: 0 0 12px 0;
+  }
+
+  .text p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Actions - Hidden by default, show on hover */
   .actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 12px;
+    padding: 0 16px 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .comment:hover .actions {
+    opacity: 1;
   }
 
   .reply-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
-    color: var(--accent);
+    font-size: 12px;
+    color: var(--muted);
     background: transparent;
     border: none;
     padding: 0;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: color 0.2s;
     font-weight: 500;
   }
 
   .reply-link:hover {
-    opacity: 0.7;
+    color: var(--accent);
     text-decoration: underline;
   }
 
-  /* 嵌套回复 - 缩进式设计 */
+  /* Nested Replies - GitHub Style Left Border */
   .replies {
-    margin-top: 1rem;
-    padding-left: 1rem;
+    margin-top: 16px;
+    margin-left: 20px;
+    padding-left: 16px;
     border-left: 2px solid var(--border);
     display: flex;
     flex-direction: column;
   }
 
   .replies .comment {
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
   }
 
-  .replies .comment:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+  .replies .comment:first-child {
+    padding-top: 0;
   }
 
   .replies .avatar {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 
-  /* 表单 - 现代输入框 */
+  .replies .content {
+    border-color: var(--border);
+  }
+
+  /* Comment Form - GitHub Style */
   .comment-form {
-    padding-top: 1rem;
+    margin-top: 24px;
   }
 
   .form-title {
-    font-size: 1rem;
+    font-size: 14px;
     font-weight: 600;
     color: var(--foreground);
-    margin-bottom: 1rem;
-    letter-spacing: -0.01em;
+    margin-bottom: 12px;
   }
 
   .form-fields {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 12px;
+    margin-bottom: 12px;
   }
 
   .form-fields input {
     flex: 1;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.9375rem;
+    padding: 8px 12px;
+    font-size: 14px;
     color: var(--foreground);
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: 6px;
     outline: none;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   .form-fields input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 0, 0, 0), 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 0, 108, 172), 0.1);
   }
 
   .form-fields input::placeholder {
     color: var(--muted);
-    opacity: 0.6;
   }
 
   textarea {
     width: 100%;
-    padding: 0.875rem;
-    font-size: 0.9375rem;
+    padding: 12px;
+    font-size: 14px;
     color: var(--foreground);
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: 6px;
     outline: none;
     resize: vertical;
     min-height: 100px;
-    margin-bottom: 1rem;
-    transition: all 0.2s ease;
-    line-height: 1.6;
+    margin-bottom: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    line-height: 1.5;
   }
 
   textarea:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 0, 0, 0), 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 0, 108, 172), 0.1);
   }
 
   textarea::placeholder {
     color: var(--muted);
-    opacity: 0.6;
   }
 
   .form-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 8px;
     align-items: center;
   }
 
   .btn-submit,
   .btn-cancel {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
+    padding: 6px 16px;
+    font-size: 14px;
     font-weight: 500;
-    border-radius: 0.5rem;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
+    border: 1px solid;
   }
 
   .btn-submit {
-    color: white;
-    background: var(--foreground);
-    border: 1px solid var(--foreground);
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
   }
 
   .btn-submit:hover:not(:disabled) {
-    opacity: 0.85;
+    filter: brightness(0.9);
   }
 
   .btn-submit:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
   }
 
   .btn-cancel {
-    color: var(--muted);
-    background: transparent;
-    border: 1px solid transparent;
+    color: var(--foreground);
+    background: var(--background);
+    border-color: var(--border);
   }
 
   .btn-cancel:hover {
-    color: var(--foreground);
     background: var(--border);
   }
 
   .form-message {
-    margin-top: 0.75rem;
-    font-size: 0.875rem;
+    margin-top: 8px;
+    font-size: 14px;
     font-weight: 500;
   }
 
   .form-message.success {
-    color: var(--accent);
+    color: #1a7f37;
   }
 
   .form-message.error {
-    color: #dc2626;
+    color: #cf222e;
   }
 
-  @media (max-width: 480px) {
+  /* Mobile Responsive */
+  @media (max-width: 640px) {
     .comment {
-      gap: 0.75rem;
-      padding: 1.25rem 0;
+      gap: 10px;
     }
 
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
+    }
+
+    .content {
+      border-radius: 6px;
+    }
+
+    .comment-header {
+      padding: 6px 12px;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .text {
+      padding: 10px 12px;
+    }
+
+    .actions {
+      padding: 0 12px 10px;
+      opacity: 1; /* Always show on mobile */
     }
 
     .replies {
-      padding-left: 0.75rem;
+      margin-left: 10px;
+      padding-left: 12px;
     }
 
     .replies .avatar {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
     }
 
     .form-fields {
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 8px;
     }
   }
 </style>
