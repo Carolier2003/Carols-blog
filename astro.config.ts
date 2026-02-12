@@ -14,6 +14,26 @@ import { SITE } from "./src/config";
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
+  redirects: {
+    // MyBatis 多数据源
+    "/2025/10/02/mybatis-多数据源踩坑记录：本地-100-过，上线-50-炸，罪魁祸":
+      "/posts/mybatis-multi-datasource-classpath-issue",
+
+    // 三种消息队列
+    "/2025/08/20/三种消息队列之间的比较": "/posts/三种消息队列之间的比较",
+
+    // 网站速度优化
+    "/2025/04/15/网站速度优化": "/posts/网站速度优化",
+
+    // 数据库事务隔离级别
+    "/2025/04/19/数据库事务的隔离级别有哪些": "/posts/数据库事务的隔离级别",
+
+    // Spring 事务传播
+    "/2025/07/03/spring事务传播机制": "/posts/spring事务传播机制",
+
+    // Spring MVC
+    "/2025/07/04/spring-mvc": "/posts/spring-mvc",
+  },
   integrations: [
     sitemap({
       filter: page => SITE.showArchives || !page.endsWith("/archives"),
