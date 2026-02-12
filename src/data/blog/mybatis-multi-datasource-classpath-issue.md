@@ -18,6 +18,8 @@ tags:
 
 事情还要从昨天晚上说起。昨天下班刚到家，手就响了，打开手机一看。
 
+![image-20250930153532051](https://carol-database-oos.oss-cn-guangzhou.aliyuncs.com/image-20250930153532051.png)
+
 我的接口报错了😱，明明本地测试和预发环境都可以，为什么一到生产环境就不行了？不过还好这只是我们的内部后台管理系统。
 
 立马打开电脑，排查问题，最后把一个xml文件从`/mapper` 文件夹移动到`/mapper/clickhouse`文件夹之后就可以。
@@ -144,6 +146,8 @@ MySQL的Mapper放在`com.carol.mapper`下，ClickHouse的Mapper放在`com.carol.
     - 接口代理用的是 **ClickHouse Factory**（`@MapperScan` 子包绑定），但 statement 实际落在**主 Factory 的 map**里；
     - 由于**两个 Factory 共用同一个 JVM**，`MappedStatement` 对象在内存里是**同一份引用**， 所以 ClickHouse Factory 也能**碰巧**拿到 statement → 不报 not-found。
 
+![mermaid-2025102 125931](https://carol-database-oos.oss-cn-guangzhou.aliyuncs.com/mermaid-2025102%20125931.svg)
+
 ### 线上 fat-jar 为什么"偶发失败"
 
 * * *
@@ -158,6 +162,8 @@ MySQL的Mapper放在`com.carol.mapper`下，ClickHouse的Mapper放在`com.carol.
     - 如果恰好**重启后顺序又变**，statement 落到主 map 而 ClickHouse map 找不到 → **binding not found** 抛出来。
 
 - "再发一次包"相当于重新洗牌，顺序刚好回到"主 Factory 先注册"就**又好了**，于是出现"**同一份代码，预发可以生产不行**"的假象。
+
+![mermaid-2025102 130005](https://carol-database-oos.oss-cn-guangzhou.aliyuncs.com/mermaid-2025102%20130005.svg)
 
 ### 总结差异
 
