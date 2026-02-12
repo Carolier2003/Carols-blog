@@ -3,6 +3,8 @@
  * 浏览量显示组件
  * 用于在文章卡片和详情页显示文章浏览量
  */
+import IconEye from "@/assets/icons/IconEye.svg";
+
 interface Props {
   slug: string;
   variant?: "full" | "compact";
@@ -32,6 +34,7 @@ function formatCount(num: number): string {
   data-variant={variant}
   data-initial={initialCount}
 >
+  <IconEye class:list={["inline-block", { "size-5": variant === "full", "size-4": variant === "compact" }]} />
   <span class="count">{initialCount > 0 ? formatCount(initialCount) : "--"}</span>
   {variant === "full" && <span class="label">阅读</span>}
   {variant === "compact" && <span class="label">次阅读</span>}
