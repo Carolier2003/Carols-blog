@@ -4,6 +4,7 @@
  * 用于在文章卡片和详情页显示文章浏览量
  */
 import IconEye from "@/assets/icons/IconEye.svg";
+import { formatCount } from "@/utils/viewCounter";
 
 interface Props {
   slug: string;
@@ -12,20 +13,6 @@ interface Props {
 }
 
 const { slug, variant = "full", initialCount = 0 } = Astro.props;
-
-// API 基础 URL
-const API_BASE = "https://api.kon-carol.xyz";
-
-// 格式化数字显示 (如: 1200 -> 1.2k)
-function formatCount(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "k";
-  }
-  return num.toString();
-}
 ---
 
 <span
@@ -40,134 +27,115 @@ function formatCount(num: number): string {
   {variant === "compact" && <span class="label">次阅读</span>}
 </span>
 
-<script define:vars={{ API_BASE }}>
-  // 防止重复初始化：如果已经初始化过，直接跳过
-  if (window.__viewCounterInit) {
-    return;
-  }
-  window.__viewCounterInit = true;
+<script>
+  import {
+    formatCount,
+    getCachedViews,
+    setCachedViews,
+    isValidBatchResponse,
+    VIEW_API_BASE,
+  } from "@/utils/viewCounter";
 
-  // 格式化数字显示 (如: 1200 -> 1.2k)
-  function formatCount(num) {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + "M";
+  function initViewCounter() {
+    // 确保在浏览器环境执行
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    // 防止重复初始化：如果已经初始化过，直接跳过
+    const win = window as Window & { __viewCounterInit?: boolean };
+    if (win.__viewCounterInit) {
+      return;
     }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "k";
-    }
-    return num.toString();
-  }
+    win.__viewCounterInit = true;
 
-  // 从 sessionStorage 读取缓存
-  function getCachedViews() {
-    try {
-      const cached = sessionStorage.getItem("viewCounts");
-      const timestamp = sessionStorage.getItem("viewCountsTimestamp");
-      // 缓存 5 分钟
-      if (cached && timestamp && Date.now() - parseInt(timestamp) < 5 * 60 * 1000) {
-        return JSON.parse(cached);
-      }
-    } catch (e) {
-      console.debug("Failed to read cache:", e);
-    }
-    return {};
-  }
+    // 批量获取浏览量（只执行一次）
+    async function fetchViewCounts() {
+      // 获取所有浏览量计数器元素（每次执行时动态获取，确保获取到所有实例）
+      const counters = document.querySelectorAll(".view-counter");
+      const slugs: string[] = [];
+      const slugToElements = new Map<string, Element[]>();
 
-  // 写入缓存
-  function setCachedViews(views) {
-    try {
-      sessionStorage.setItem("viewCounts", JSON.stringify(views));
-      sessionStorage.setItem("viewCountsTimestamp", Date.now().toString());
-    } catch (e) {
-      console.debug("Failed to write cache:", e);
-    }
-  }
-
-  // 批量获取浏览量（只执行一次）
-  async function fetchViewCounts() {
-    // 获取所有浏览量计数器元素（每次执行时动态获取，确保获取到所有实例）
-    const counters = document.querySelectorAll(".view-counter");
-    const slugs = [];
-    const slugToElements = new Map();
-
-    counters.forEach((el) => {
-      const slug = el.dataset.slug;
-      if (slug) {
-        slugs.push(slug);
-        if (!slugToElements.has(slug)) {
-          slugToElements.set(slug, []);
-        }
-        slugToElements.get(slug).push(el);
-      }
-    });
-
-    if (slugs.length === 0) return;
-
-    // 先去重，避免重复查询
-    const uniqueSlugs = [...new Set(slugs)];
-
-    // 先尝试从缓存读取
-    const cachedViews = getCachedViews();
-    const slugsToFetch = [];
-    const result = { ...cachedViews };
-
-    uniqueSlugs.forEach(slug => {
-      if (cachedViews[slug] === undefined) {
-        slugsToFetch.push(slug);
-      }
-    });
-
-    // 如果有需要查询的 slug，批量获取
-    if (slugsToFetch.length > 0) {
-      try {
-        const response = await fetch(`${API_BASE}/api/views/batch`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slugs: slugsToFetch })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.views) {
-            // 合并到结果
-            Object.assign(result, data.views);
-            // 更新缓存
-            Object.assign(cachedViews, data.views);
-            setCachedViews(cachedViews);
+      counters.forEach((el) => {
+        const slug = (el as HTMLElement).dataset.slug;
+        if (slug) {
+          slugs.push(slug);
+          if (!slugToElements.has(slug)) {
+            slugToElements.set(slug, []);
           }
-        }
-      } catch (error) {
-        console.debug("Failed to fetch batch view counts:", error);
-      }
-    }
-
-    // 更新所有计数器显示
-    uniqueSlugs.forEach(slug => {
-      const elements = slugToElements.get(slug);
-      const count = result[slug] ?? 0;
-      elements?.forEach(el => {
-        const countEl = el.querySelector(".count");
-        if (countEl) {
-          countEl.textContent = formatCount(count);
+          const elements = slugToElements.get(slug);
+          if (elements) elements.push(el);
         }
       });
-    });
-  }
 
-  // 页面加载后获取浏览量（使用 requestIdleCallback 延迟执行，优先保证页面渲染）
-  const scheduleFetch = () => {
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(fetchViewCounts, { timeout: 2000 });
-    } else {
-      setTimeout(fetchViewCounts, 100);
+      if (slugs.length === 0) return;
+
+      // 先去重，避免重复查询
+      const uniqueSlugs = [...new Set(slugs)];
+
+      // 先尝试从缓存读取
+      const cachedViews = getCachedViews();
+      const slugsToFetch: string[] = [];
+      const result: Record<string, number> = { ...cachedViews };
+
+      uniqueSlugs.forEach((slug) => {
+        if (cachedViews[slug] === undefined) {
+          slugsToFetch.push(slug);
+        }
+      });
+
+      // 如果有需要查询的 slug，批量获取
+      if (slugsToFetch.length > 0) {
+        try {
+          const response = await fetch(`${VIEW_API_BASE}/api/views/batch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slugs: slugsToFetch }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (isValidBatchResponse(data)) {
+              // 合并到结果
+              Object.assign(result, data.views);
+              // 更新缓存
+              Object.assign(cachedViews, data.views);
+              setCachedViews(cachedViews);
+            }
+          }
+        } catch (error) {
+          console.debug("Failed to fetch batch view counts:", error);
+        }
+      }
+
+      // 更新所有计数器显示
+      uniqueSlugs.forEach((slug) => {
+        const elements = slugToElements.get(slug);
+        const count = result[slug] ?? 0;
+        elements?.forEach((el) => {
+          const countEl = el.querySelector(".count");
+          if (countEl) {
+            countEl.textContent = formatCount(count);
+          }
+        });
+      });
     }
-  };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scheduleFetch);
-  } else {
-    scheduleFetch();
+    // 页面加载后获取浏览量（使用 requestIdleCallback 延迟执行，优先保证页面渲染）
+    const scheduleFetch = () => {
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(fetchViewCounts, { timeout: 2000 });
+      } else {
+        setTimeout(fetchViewCounts, 100);
+      }
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", scheduleFetch);
+    } else {
+      scheduleFetch();
+    }
   }
+
+  initViewCounter();
 </script>
 
 <style>

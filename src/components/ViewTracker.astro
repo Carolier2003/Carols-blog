@@ -8,115 +8,112 @@ interface Props {
 }
 
 const { slug } = Astro.props;
-
-// API 基础 URL
-const API_BASE = "https://api.kon-carol.xyz";
 ---
 
 <div data-view-tracker data-slug={slug}></div>
 
-<script define:vars={{ API_BASE, slug }}>
-  // 检查是否已经记录过浏览量（使用 localStorage）
-  function hasViewed(slug) {
-    const key = `viewed_${slug}`;
-    const lastViewed = localStorage.getItem(key);
+<script>
+  import { hasViewed, markViewed, VIEW_API_BASE } from "@/utils/viewCounter";
 
-    if (!lastViewed) {
-      return false;
-    }
+  function initViewTracker() {
+    // 确保在浏览器环境执行
+    if (typeof document === "undefined") return;
 
-    // 24 小时内不重复计数
-    const lastTime = parseInt(lastViewed, 10);
-    const now = Date.now();
-    const hoursPassed = (now - lastTime) / (1000 * 60 * 60);
+    // 获取当前 slug
+    const trackerEl = document.querySelector("[data-view-tracker]");
+    const slug = trackerEl?.getAttribute("data-slug");
+    if (!slug) return;
 
-    return hoursPassed < 24;
-  }
+    // 是否已经追踪过（防止重复发送）
+    let hasTracked = false;
 
-  // 标记已浏览
-  function markViewed(slug) {
-    const key = `viewed_${slug}`;
-    localStorage.setItem(key, Date.now().toString());
-  }
-
-  // 发送浏览记录
-  async function trackView(slug) {
-    // 检查是否已经浏览过
-    if (hasViewed(slug)) {
-      console.debug("Already viewed recently, skipping track");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/api/views/${encodeURIComponent(slug)}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // 标记已浏览
-          markViewed(slug);
-          console.debug("View tracked:", data.view_count);
-
-          // 触发自定义事件，通知 ViewCounter 更新
-          window.dispatchEvent(new CustomEvent("viewcount-updated", {
-            detail: { slug, count: data.view_count }
-          }));
-        }
+    // 发送浏览记录
+    async function trackView(slug: string) {
+      // 双重检查：内存标志 + localStorage
+      if (hasTracked || hasViewed(slug)) {
+        console.debug("Already viewed recently, skipping track");
+        return;
       }
-    } catch (error) {
-      // 静默失败，不影响用户体验
-      console.debug("Failed to track view:", error);
-    }
-  }
 
-  // 使用 IntersectionObserver 确保用户真正阅读才计数
-  // 或者页面加载后延迟计数
-  function initTracker() {
+      // 立即设置标志，防止竞态条件
+      hasTracked = true;
+
+      try {
+        const response = await fetch(`${VIEW_API_BASE}/api/views/${encodeURIComponent(slug)}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            // 标记已浏览
+            markViewed(slug);
+            console.debug("View tracked:", data.view_count);
+          }
+        }
+      } catch (error) {
+        // 静默失败，不影响用户体验
+        console.debug("Failed to track view:", error);
+        // 失败时重置标志，允许重试
+        hasTracked = false;
+      }
+    }
+
     // 检查是否是搜索引擎爬虫或预览
-    const isBot = /bot|crawler|spider|crawling/i.test(navigator.userAgent);
-    if (isBot) {
-      console.debug("Bot detected, skipping view tracking");
-      return;
+    function isBot(): boolean {
+      return /bot|crawler|spider|crawling/i.test(navigator.userAgent);
     }
 
-    // 延迟 3 秒后计数，确保用户真正阅读
-    setTimeout(() => {
-      trackView(slug);
-    }, 3000);
+    // 初始化追踪器
+    function initTracker() {
+      if (isBot()) {
+        console.debug("Bot detected, skipping view tracking");
+        return;
+      }
 
-    // 或者使用 IntersectionObserver
-    const tracker = document.querySelector("[data-view-tracker]");
-    if (tracker && "IntersectionObserver" in window) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              // 元素可见时计数（延迟后）
-              setTimeout(() => {
-                trackView(slug);
-              }, 2000);
-              observer.disconnect();
-            }
-          });
-        },
-        { threshold: 0.5 }
-      );
-      observer.observe(tracker);
+      // 保存 slug 到局部变量，确保回调中能访问（前面已检查不为空）
+      const currentSlug = slug!;
+
+      // 方案1：延迟 3 秒后计数（确保用户真正阅读）
+      const timeoutId = setTimeout(() => {
+        trackView(currentSlug);
+      }, 3000);
+
+      // 方案2：元素可见时计数
+      if ("IntersectionObserver" in window && trackerEl) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                // 元素可见时计数（延迟后）
+                setTimeout(() => {
+                  trackView(currentSlug);
+                }, 2000);
+                observer.disconnect();
+                // 取消延迟方案，避免重复
+                clearTimeout(timeoutId);
+              }
+            });
+          },
+          { threshold: 0.5 }
+        );
+        observer.observe(trackerEl);
+      }
     }
+
+    // 页面加载后初始化
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initTracker);
+    } else {
+      initTracker();
+    }
+
+    // 处理 Astro 页面过渡
+    document.addEventListener("astro:page-load", initTracker);
   }
 
-  // 页面加载后初始化
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initTracker);
-  } else {
-    initTracker();
-  }
-
-  // 处理 Astro 页面过渡
-  document.addEventListener("astro:page-load", initTracker);
+  initViewTracker();
 </script>
