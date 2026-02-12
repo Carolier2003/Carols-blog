@@ -4,6 +4,7 @@ pubDatetime: 2025-10-02T00:00:00Z
 title: "MyBatis 多数据源踩坑记录：本地 100% 过，上线 50% 炸，罪魁祸首竟然是 classpath 顺序"
 description: 记录一次由于 classpath 顺序导致的 MyBatis 多数据源问题排查过程。
 draft: false
+featured: true
 tags:
   - clickhouse
   - debug
