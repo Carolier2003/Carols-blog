@@ -1,0 +1,122 @@
+---
+/**
+ * 浏览量记录组件
+ * 在文章详情页使用，记录用户浏览
+ */
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+
+// API 基础 URL
+const API_BASE = "https://api.kon-carol.xyz";
+---
+
+<div data-view-tracker data-slug={slug}></div>
+
+<script define:vars={{ API_BASE, slug }}>
+  // 检查是否已经记录过浏览量（使用 localStorage）
+  function hasViewed(slug) {
+    const key = `viewed_${slug}`;
+    const lastViewed = localStorage.getItem(key);
+
+    if (!lastViewed) {
+      return false;
+    }
+
+    // 24 小时内不重复计数
+    const lastTime = parseInt(lastViewed, 10);
+    const now = Date.now();
+    const hoursPassed = (now - lastTime) / (1000 * 60 * 60);
+
+    return hoursPassed < 24;
+  }
+
+  // 标记已浏览
+  function markViewed(slug) {
+    const key = `viewed_${slug}`;
+    localStorage.setItem(key, Date.now().toString());
+  }
+
+  // 发送浏览记录
+  async function trackView(slug) {
+    // 检查是否已经浏览过
+    if (hasViewed(slug)) {
+      console.debug("Already viewed recently, skipping track");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/views/${encodeURIComponent(slug)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // 标记已浏览
+          markViewed(slug);
+          console.debug("View tracked:", data.view_count);
+
+          // 触发自定义事件，通知 ViewCounter 更新
+          window.dispatchEvent(new CustomEvent("viewcount-updated", {
+            detail: { slug, count: data.view_count }
+          }));
+        }
+      }
+    } catch (error) {
+      // 静默失败，不影响用户体验
+      console.debug("Failed to track view:", error);
+    }
+  }
+
+  // 使用 IntersectionObserver 确保用户真正阅读才计数
+  // 或者页面加载后延迟计数
+  function initTracker() {
+    // 检查是否是搜索引擎爬虫或预览
+    const isBot = /bot|crawler|spider|crawling/i.test(navigator.userAgent);
+    if (isBot) {
+      console.debug("Bot detected, skipping view tracking");
+      return;
+    }
+
+    // 延迟 3 秒后计数，确保用户真正阅读
+    setTimeout(() => {
+      trackView(slug);
+    }, 3000);
+
+    // 或者使用 IntersectionObserver
+    const tracker = document.querySelector("[data-view-tracker]");
+    if (tracker && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              // 元素可见时计数（延迟后）
+              setTimeout(() => {
+                trackView(slug);
+              }, 2000);
+              observer.disconnect();
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+      observer.observe(tracker);
+    }
+  }
+
+  // 页面加载后初始化
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initTracker);
+  } else {
+    initTracker();
+  }
+
+  // 处理 Astro 页面过渡
+  document.addEventListener("astro:page-load", initTracker);
+</script>

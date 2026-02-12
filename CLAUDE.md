@@ -75,6 +75,10 @@ Uses TailwindCSS v4 with CSS-based configuration (no `tailwind.config.js`):
 - Theme variables: `--background`, `--foreground`, `--accent`, `--muted`, `--border`
 - Dark mode uses `data-theme="dark"` attribute on `<html>`
 
+**Color Schemes:**
+- Light: `#fdfdfd` bg, `#282728` text, `#006cac` accent
+- Dark: `#212737` bg, `#eaedf3` text, `#ff6b01` accent
+
 ### Key Configuration Files
 
 - `src/config.ts` - Site metadata, pagination settings, feature flags
@@ -102,12 +106,26 @@ Uses flat config (`eslint.config.js`) with:
 - Custom rule: `no-console: "error"`
 - Ignores: `dist/`, `.astro/`, `public/pagefind/`
 
-### Comment System (Custom)
+### Comment System (Giscus)
 
-Located at `src/components/Comments.astro`. Uses Cloudflare Worker + D1 for backend storage.
+Located at `src/components/Comments.astro`. Uses Giscus (GitHub Discussions-based commenting).
+
+**Configuration:**
+- Repository: `Carolier2003/Carols-blog`
+- Category: `Announcements`
+- Mapping: `pathname` (each page maps to its own discussion)
+
+**Custom Themes:**
+- `public/giscus-light.css` - Custom theme matching site light mode
+- `public/giscus-dark.css` - Custom theme matching site dark mode
+
+**Theme Sync:**
+- `src/scripts/theme.ts` sends `postMessage` to Giscus iframe when theme changes
+- Initial theme set by `initGiscusTheme()` in Comments.astro
+- Handles Astro page transitions via `astro:after-swap` event
 
 **Important - Scoped CSS Gotcha:**
-Astro's default `<style>` scopes CSS with `data-astro-cid-*` attributes. JavaScript dynamically created elements (like comments loaded from API) won't have this attribute, so styles won't apply. **Solution**: Use `<style is:global>` for components that render dynamic content via client-side JavaScript.
+Astro's default `<style>` scopes CSS with `data-astro-cid-*` attributes. JavaScript dynamically created elements (like Giscus iframe) won't have this attribute, so styles won't apply. **Solution**: Use `<style is:global>` for components that render dynamic content via client-side JavaScript.
 
 Example:
 ```astro
