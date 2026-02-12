@@ -37,13 +37,13 @@ tags:
 
 1. `@Configuration` 被 `ConfigurationClassPostProcessor` 加载；
 
-3. 遇到 `@MapperScan("com.ruoyi.xxx.mapper")` → Spring 会动态注册一个 `MapperScannerConfigurer` （MyBatis-Plus 里叫 `MapperScannerRegistrar` ）
+2. 遇到 `@MapperScan("com.ruoyi.xxx.mapper")` → Spring 会动态注册一个 `MapperScannerConfigurer` （MyBatis-Plus 里叫 `MapperScannerRegistrar` ）
 
-5. `MapperScannerConfigurer` 做的事：
-    - 拿到包名，用 `ClassPathBeanDefinitionScanner` 扫出所有带 @Mapper 的接口；
-    - 把每个接口包装成 `BeanDefinition` ，`beanClass` 设置成 `MapperFactoryBean` （这是关键代理工厂）；
-    - 同时把 `sqlSessionFactoryRef / sqlSessionTemplateRef` 写进 `BeanDefinition` 的属性里，提前绑定用哪个 `SqlSessionFactory`；
-    - 最后把这些 `BeanDefinition` 注册到 Spring 容器，但此时还并没有实例。
+3. `MapperScannerConfigurer` 做的事：
+   - 拿到包名，用 `ClassPathBeanDefinitionScanner` 扫出所有带 @Mapper 的接口；
+   - 把每个接口包装成 `BeanDefinition` ，`beanClass` 设置成 `MapperFactoryBean` （这是关键代理工厂）；
+   - 同时把 `sqlSessionFactoryRef / sqlSessionTemplateRef` 写进 `BeanDefinition` 的属性里，提前绑定用哪个 `SqlSessionFactory`；
+   - 最后把这些 `BeanDefinition` 注册到 Spring 容器，但此时还并没有实例。
 
 **效果：接口被提前"预约"成 Spring Bean，真正的实现类是 MyBatis 生成的代理。**
 
@@ -53,11 +53,11 @@ tags:
 
 1. 解析 `mapperLocations` → 把所有 XML 读成 `InputStream` ，封装成 `SqlSource` ；
 
-3. 解析 XML 里的 <select|insert|update|delete> → 生成 `MappedStatement` ，id = 接口全限定名 + 方法名；
+2. 解析 XML 里的 <select|insert|update|delete> → 生成 `MappedStatement` ，id = 接口全限定名 + 方法名；
 
-5. 把 MappedStatement 注册到 `Configuration.mappedStatements`（一个严格 Map，key 就是 id）；
+3. 把 MappedStatement 注册到 `Configuration.mappedStatements`（一个严格 Map，key 就是 id）；
 
-7. 返回 `DefaultSqlSessionFactory` 实例。
+4. 返回 `DefaultSqlSessionFactory` 实例。
 
 **效果：XML 被解析成可执行的 SQL 模板，并与接口方法一一绑定。**
 
@@ -120,12 +120,12 @@ MySQL的Mapper放在`com.carol.mapper`下，ClickHouse的Mapper放在`com.carol.
 **现在这里的情况**
 
 - **ClickHouse 专用 Factory**：
-    - @MapperScan → 只扫 com.carol.mapper.clickhouse 包下的接口。
-    - setMapperLocations → 指定 mapper/clickhouse/*.xml。
+  - @MapperScan → 只扫 com.carol.mapper.clickhouse 包下的接口。
+  - setMapperLocations → 指定 mapper/clickhouse/\*.xml。
 
 - **主 Factory**：
-    - @MapperScan → 扫整个 mapper 包（包含 ck 子包）。
-    - setMapperLocations → 配置了一个广义路径（mapper/_*/_Mapper.xml）。
+  - @MapperScan → 扫整个 mapper 包（包含 ck 子包）。
+  - setMapperLocations → 配置了一个广义路径（mapper/\_\*/\_Mapper.xml）。
 
 但是由于我的XML文件放在`/mapper/`文件夹下面，所以只能被主Factory扫描到。但是为什么在本地查询的时候可以正常运行呢？我一看，原来是我在Mapper文件上面加了`@DataSource(DataSourceType.CLICKHOUSE)`注解，所以，即使被主 Factory扫描，实际上也是查询的ClickHouse数据库。
 
@@ -135,7 +135,7 @@ MySQL的Mapper放在`com.carol.mapper`下，ClickHouse的Mapper放在`com.carol.
 
 ### 本地为什么"永远好用"
 
-* * *
+---
 
 - IDEA 采用**目录式** classpath，`/mapper/CarolMapper.xml` 在磁盘上**固定在前**；
 
@@ -144,23 +144,23 @@ MySQL的Mapper放在`com.carol.mapper`下，ClickHouse的Mapper放在`com.carol.
 - ClickHouse Factory 后启动，**发现 statementId 已存在就静默跳过**（MyBatis 默认不覆盖）；
 
 - 调用时：
-    - 接口代理用的是 **ClickHouse Factory**（`@MapperScan` 子包绑定），但 statement 实际落在**主 Factory 的 map**里；
-    - 由于**两个 Factory 共用同一个 JVM**，`MappedStatement` 对象在内存里是**同一份引用**， 所以 ClickHouse Factory 也能**碰巧**拿到 statement → 不报 not-found。
+  - 接口代理用的是 **ClickHouse Factory**（`@MapperScan` 子包绑定），但 statement 实际落在**主 Factory 的 map**里；
+  - 由于**两个 Factory 共用同一个 JVM**，`MappedStatement` 对象在内存里是**同一份引用**， 所以 ClickHouse Factory 也能**碰巧**拿到 statement → 不报 not-found。
 
 ![mermaid-2025102 125931](https://carol-database-oos.oss-cn-guangzhou.aliyuncs.com/mermaid-2025102%20125931.svg)
 
 ### 线上 fat-jar 为什么"偶发失败"
 
-* * *
+---
 
 - 打包后顺序随机 jar 里 `JarFile#entries()` 不保证顺序，某次构建可能把 `CarolMapper.xml` 排在**clickhouse 目录之后**；
 
 - 启动时序随之改变 ClickHouse Factory 先读到 XML → 把 statement 注册到自己 map； 主 Factory 后读到 → 发现 key 已存在，**跳过**；
 
 - 调用阶段
-    - 接口代理仍绑定 ClickHouse Factory；
-    - 这次 statement **只在 ClickHouse map 里**，主 map 没有；
-    - 如果恰好**重启后顺序又变**，statement 落到主 map 而 ClickHouse map 找不到 → **binding not found** 抛出来。
+  - 接口代理仍绑定 ClickHouse Factory；
+  - 这次 statement **只在 ClickHouse map 里**，主 map 没有；
+  - 如果恰好**重启后顺序又变**，statement 落到主 map 而 ClickHouse map 找不到 → **binding not found** 抛出来。
 
 - "再发一次包"相当于重新洗牌，顺序刚好回到"主 Factory 先注册"就**又好了**，于是出现"**同一份代码，预发可以生产不行**"的假象。
 
@@ -168,19 +168,19 @@ MySQL的Mapper放在`com.carol.mapper`下，ClickHouse的Mapper放在`com.carol.
 
 ### 总结差异
 
-* * *
+---
 
-| 场景 | classpath 顺序 | statement 注册位置 | 是否可见 | 结果 |
-| --- | --- | --- | --- | --- |
-| IDEA | 固定，主先注册 | 主 Factory map | 两 Factory 同 JVM 引用 | 永远成功 |
-| 线上 jar | 随机 | 随机落在 A 或 B | 只有注册方可见 | 时好时坏 |
+| 场景     | classpath 顺序 | statement 注册位置 | 是否可见               | 结果     |
+| -------- | -------------- | ------------------ | ---------------------- | -------- |
+| IDEA     | 固定，主先注册 | 主 Factory map     | 两 Factory 同 JVM 引用 | 永远成功 |
+| 线上 jar | 随机           | 随机落在 A 或 B    | 只有注册方可见         | 时好时坏 |
 
 ### 解决方法
 
-* * *
+---
 
 1. **物理隔离文件** `CarolMapper.xml` 放到 `/mapper/clickhouse/` 目录， 让 ClickHouse Factory **100% 能扫到**；
 
-3. **逻辑隔离扫描包** 主 Factory 的 `@MapperScan` 加 `excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*clickhouse.*")` 保证接口只被 ClickHouse Factory 代理；
+2. **逻辑隔离扫描包** 主 Factory 的 `@MapperScan` 加 `excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*clickhouse.*")` 保证接口只被 ClickHouse Factory 代理；
 
-5. **兜底** 两个 Factory 都用 `"classpath*:/mapper/**/*Mapper.xml"` 也行， 但**务必确保接口包不重叠**，否则仍可能覆盖。
+3. **兜底** 两个 Factory 都用 `"classpath*:/mapper/**/*Mapper.xml"` 也行， 但**务必确保接口包不重叠**，否则仍可能覆盖。

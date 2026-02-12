@@ -56,10 +56,10 @@ async function fetchUserData(userId) {
       id: userData.id,
       name: userData.name,
       email: userData.email,
-      createdAt: new Date(userData.created_at)
+      createdAt: new Date(userData.created_at),
     };
   } catch (error) {
-    console.error('Failed to fetch user:', error);
+    console.error("Failed to fetch user:", error);
     return null;
   }
 }
@@ -170,7 +170,7 @@ interface PaginationParams {
   page: number;
   pageSize: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 interface PaginationResult<T> {
@@ -206,7 +206,7 @@ interface UserProfile {
 }
 
 interface SocialLink {
-  platform: 'github' | 'twitter' | 'linkedin' | 'weibo';
+  platform: "github" | "twitter" | "linkedin" | "weibo";
   url: string;
 }
 
@@ -220,7 +220,7 @@ interface Role {
 interface Permission {
   id: string;
   resource: string;
-  action: 'create' | 'read' | 'update' | 'delete';
+  action: "create" | "read" | "update" | "delete";
   conditions?: Record<string, unknown>;
 }
 
@@ -234,15 +234,17 @@ type DeepReadonly<T> = {
 
 // 事件系统类型
 interface EventMap {
-  'user:login': { userId: string; timestamp: number; ip: string };
-  'user:logout': { userId: string; timestamp: number };
-  'user:update': { userId: string; changes: Partial<User> };
-  'error': { message: string; stack?: string; context?: unknown };
+  "user:login": { userId: string; timestamp: number; ip: string };
+  "user:logout": { userId: string; timestamp: number };
+  "user:update": { userId: string; changes: Partial<User> };
+  error: { message: string; stack?: string; context?: unknown };
 }
 
 type EventName = keyof EventMap;
 type EventPayload<T extends EventName> = EventMap[T];
-type EventListener<T extends EventName> = (payload: EventPayload<T>) => void | Promise<void>;
+type EventListener<T extends EventName> = (
+  payload: EventPayload<T>
+) => void | Promise<void>;
 
 class TypedEventEmitter {
   private listeners: Map<EventName, Set<EventListener<any>>> = new Map();
@@ -484,7 +486,7 @@ logging:
 ### Docker Compose
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -609,16 +611,18 @@ ORDER BY re.department_name, re.salary DESC;
   position: relative;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-              0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .card__image {
@@ -685,57 +689,62 @@ ORDER BY re.department_name, re.salary DESC;
 ```html
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="示例页面">
-  <title>代码高亮测试页面</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="header">
-    <nav class="nav">
-      <a href="/" class="nav__logo">Logo</a>
-      <ul class="nav__menu">
-        <li><a href="/home" class="nav__link">首页</a></li>
-        <li><a href="/about" class="nav__link">关于</a></li>
-        <li><a href="/contact" class="nav__link">联系</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main class="main">
-    <article class="article">
-      <h1>欢迎来到代码高亮测试页面</h1>
-      <p>这是一个用于测试各种代码块渲染效果的示例页面。</p>
-
-      <section class="section">
-        <h2>特性介绍</h2>
-        <ul>
-          <li>支持多种编程语言</li>
-          <li>语法高亮显示</li>
-          <li>代码复制功能</li>
-          <li>响应式设计</li>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="示例页面" />
+    <title>代码高亮测试页面</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <nav class="nav">
+        <a href="/" class="nav__logo">Logo</a>
+        <ul class="nav__menu">
+          <li><a href="/home" class="nav__link">首页</a></li>
+          <li><a href="/about" class="nav__link">关于</a></li>
+          <li><a href="/contact" class="nav__link">联系</a></li>
         </ul>
-      </section>
+      </nav>
+    </header>
 
-      <form class="form" action="/submit" method="POST">
-        <div class="form__group">
-          <label for="email">邮箱</label>
-          <input type="email" id="email" name="email" required
-                 placeholder="your@email.com">
-        </div>
-        <button type="submit" class="button">提交</button>
-      </form>
-    </article>
-  </main>
+    <main class="main">
+      <article class="article">
+        <h1>欢迎来到代码高亮测试页面</h1>
+        <p>这是一个用于测试各种代码块渲染效果的示例页面。</p>
 
-  <footer class="footer">
-    <p>&copy; 2025 Code Highlight Test. All rights reserved.</p>
-  </footer>
+        <section class="section">
+          <h2>特性介绍</h2>
+          <ul>
+            <li>支持多种编程语言</li>
+            <li>语法高亮显示</li>
+            <li>代码复制功能</li>
+            <li>响应式设计</li>
+          </ul>
+        </section>
 
-  <script src="app.js"></script>
-</body>
+        <form class="form" action="/submit" method="POST">
+          <div class="form__group">
+            <label for="email">邮箱</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="your@email.com"
+            />
+          </div>
+          <button type="submit" class="button">提交</button>
+        </form>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2025 Code Highlight Test. All rights reserved.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
 </html>
 ```
 
@@ -875,6 +884,7 @@ main "$@"
 ### 空代码块
 
 ```
+
 ```
 
 ### 只有注释的代码块
@@ -889,7 +899,8 @@ main "$@"
 ### 非常长的单行
 
 ```javascript
-const veryLongString = "这是一段非常长的字符串，用于测试代码块的横向滚动和溢出处理。Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+const veryLongString =
+  "这是一段非常长的字符串，用于测试代码块的横向滚动和溢出处理。Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 ```
 
 ---
