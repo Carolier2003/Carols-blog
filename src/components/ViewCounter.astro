@@ -24,7 +24,7 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
   data-immediate={String(immediate)}
 >
   <IconEye class:list={["inline-block", { "size-5": variant === "full", "size-4": variant === "compact" }]} />
-  <span class="count">{initialCount > 0 ? formatCount(initialCount) : "--"}</span>
+  <span class="count loading">加载中...</span>
   {variant === "full" && <span class="label">阅读</span>}
   {variant === "compact" && <span class="label">次阅读</span>}
 </span>
@@ -171,5 +171,18 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
 
   .count {
     font-variant-numeric: tabular-nums;
+    min-width: 3ch;
+    text-align: center;
+  }
+
+  .count.loading {
+    color: var(--muted);
+    font-size: 0.8em;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
   }
 </style>
