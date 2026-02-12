@@ -10,9 +10,10 @@ interface Props {
   slug: string;
   variant?: "full" | "compact";
   initialCount?: number;
+  immediate?: boolean; // 是否立即加载（详情页用）
 }
 
-const { slug, variant = "full", initialCount = 0 } = Astro.props;
+const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.props;
 ---
 
 <span
@@ -20,6 +21,7 @@ const { slug, variant = "full", initialCount = 0 } = Astro.props;
   data-slug={slug}
   data-variant={variant}
   data-initial={initialCount}
+  data-immediate={String(immediate)}
 >
   <IconEye class:list={["inline-block", { "size-5": variant === "full", "size-4": variant === "compact" }]} />
   <span class="count">{initialCount > 0 ? formatCount(initialCount) : "--"}</span>
@@ -119,12 +121,24 @@ const { slug, variant = "full", initialCount = 0 } = Astro.props;
       });
     }
 
-    // 页面加载后获取浏览量（使用 requestIdleCallback 延迟执行，优先保证页面渲染）
+    // 页面加载后获取浏览量
+    // 详情页使用 immediate=true 立即加载，其他页面使用 requestIdleCallback 延迟执行
+    const counters = document.querySelectorAll(".view-counter");
+    const hasImmediate = Array.from(counters).some(
+      (el) => (el as HTMLElement).dataset.immediate === "true"
+    );
+
     const scheduleFetch = () => {
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(fetchViewCounts, { timeout: 2000 });
+      if (hasImmediate) {
+        // 详情页：立即执行
+        fetchViewCounts();
       } else {
-        setTimeout(fetchViewCounts, 100);
+        // 列表页：延迟执行，优先保证页面渲染
+        if ("requestIdleCallback" in window) {
+          requestIdleCallback(fetchViewCounts, { timeout: 2000 });
+        } else {
+          setTimeout(fetchViewCounts, 100);
+        }
       }
     };
 
