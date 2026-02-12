@@ -10,6 +10,8 @@ import ShareLinks from "@/components/ShareLinks.astro";
 import Comments from "@/components/Comments.astro";
 import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
+import ViewCounter from "@/components/ViewCounter.astro";
+import ViewTracker from "@/components/ViewTracker.astro";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
@@ -68,6 +70,9 @@ const layoutProps = {
   scrollSmooth: true,
 };
 
+// 生成文章 slug 用于浏览量统计
+const articleSlug = getPath(post.id, post.filePath, false).replace(/^\//, "");
+
 /* ========== Prev/Next Posts ========== */
 
 const allPosts = posts.map(({ data: { title }, id, filePath }) => ({
@@ -97,16 +102,18 @@ const nextPost =
     >
       {title}
     </h1>
-    <div class="my-2 flex items-center gap-2">
+    <div class="my-2 flex flex-wrap items-center gap-2 text-sm">
       <Datetime {pubDatetime} {modDatetime} {timezone} size="lg" />
       <span
         aria-hidden="true"
         class:list={[
-          "max-sm:hidden",
+          "max-sm:hidden text-muted",
           { hidden: !SITE.editPost.enabled || hideEditPost },
         ]}>|</span
       >
       <EditPost {hideEditPost} {post} class="max-sm:hidden" />
+      <span aria-hidden="true" class="text-muted">|</span>
+      <ViewCounter slug={articleSlug} variant="full" />
     </div>
     <article
       id="article"
@@ -126,6 +133,8 @@ const nextPost =
     <BackToTopButton />
 
     <ShareLinks />
+
+    <ViewTracker slug={articleSlug} />
 
     <Comments />
 

@@ -1,0 +1,129 @@
+---
+/**
+ * 浏览量显示组件
+ * 用于在文章卡片和详情页显示文章浏览量
+ */
+interface Props {
+  slug: string;
+  variant?: "full" | "compact";
+  initialCount?: number;
+}
+
+const { slug, variant = "full", initialCount = 0 } = Astro.props;
+
+// API 基础 URL
+const API_BASE = "https://api.kon-carol.xyz";
+
+// 格式化数字显示 (如: 1200 -> 1.2k)
+function formatCount(num: number): string {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "k";
+  }
+  return num.toString();
+}
+---
+
+<span
+  class:list={["view-counter", variant]}
+  data-slug={slug}
+  data-variant={variant}
+  data-initial={initialCount}
+>
+  {variant === "full" && <span class="icon">👁</span>}
+  <span class="count">{initialCount > 0 ? formatCount(initialCount) : "--"}</span>
+  {variant === "full" && <span class="label">阅读</span>}
+</span>
+
+<script define:vars={{ API_BASE }}>
+  // 格式化数字显示 (如: 1200 -> 1.2k)
+  function formatCount(num) {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + "M";
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + "k";
+    }
+    return num.toString();
+  }
+
+  // 获取所有浏览量计数器元素
+  const counters = document.querySelectorAll(".view-counter");
+
+  // 批量获取浏览量
+  async function fetchViewCounts() {
+    const slugs = [];
+    const elements = [];
+
+    counters.forEach((el) => {
+      const slug = el.dataset.slug;
+      if (slug) {
+        slugs.push(slug);
+        elements.push(el);
+      }
+    });
+
+    if (slugs.length === 0) return;
+
+    // 逐个获取（因为 API 目前只支持单个查询）
+    for (let i = 0; i < slugs.length; i++) {
+      const slug = slugs[i];
+      const el = elements[i];
+
+      try {
+        const response = await fetch(`${API_BASE}/api/views/${encodeURIComponent(slug)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const countEl = el.querySelector(".count");
+            if (countEl) {
+              countEl.textContent = formatCount(data.view_count);
+            }
+          }
+        }
+      } catch (error) {
+        // 静默失败，保持显示初始值
+        console.debug("Failed to fetch view count:", error);
+      }
+    }
+  }
+
+  // 页面加载后获取浏览量
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", fetchViewCounts);
+  } else {
+    fetchViewCounts();
+  }
+</script>
+
+<style>
+  .view-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--color-fg-muted, #6e7781);
+    font-size: 0.875rem;
+  }
+
+  .view-counter.full {
+    gap: 0.375rem;
+  }
+
+  .view-counter.compact {
+    font-size: 0.8rem;
+  }
+
+  .icon {
+    opacity: 0.7;
+  }
+
+  .count {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    opacity: 0.8;
+  }
+</style>
