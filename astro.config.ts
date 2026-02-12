@@ -14,6 +14,7 @@ import { SITE } from "./src/config";
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
+  prefetch: false, // 禁用链接预加载，避免 Cloudflare Pages 503 错误
   redirects: {
     // MyBatis 多数据源
     "/2025/10/02/mybatis-多数据源踩坑记录：本地-100-过，上线-50-炸，罪魁祸":
