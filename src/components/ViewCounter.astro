@@ -32,9 +32,9 @@ function formatCount(num: number): string {
   data-variant={variant}
   data-initial={initialCount}
 >
-  {variant === "full" && <span class="icon">👁</span>}
   <span class="count">{initialCount > 0 ? formatCount(initialCount) : "--"}</span>
   {variant === "full" && <span class="label">阅读</span>}
+  {variant === "compact" && <span class="label">次阅读</span>}
 </span>
 
 <script define:vars={{ API_BASE }}>
@@ -103,7 +103,7 @@ function formatCount(num: number): string {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    color: var(--color-fg-muted, #6e7781);
+    opacity: 0.8;
     font-size: 0.875rem;
   }
 
@@ -115,15 +115,7 @@ function formatCount(num: number): string {
     font-size: 0.8rem;
   }
 
-  .icon {
-    opacity: 0.7;
-  }
-
   .count {
     font-variant-numeric: tabular-nums;
-  }
-
-  .label {
-    opacity: 0.8;
   }
 </style>
