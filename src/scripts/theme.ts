@@ -37,8 +37,9 @@ function reflectPreference(): void {
     "iframe.giscus-frame"
   );
   if (giscusFrame) {
+    const giscusTheme = themeValue === "dark" ? "noborder_dark" : "noborder_light";
     giscusFrame.contentWindow?.postMessage(
-      { giscus: { setConfig: { theme: themeValue } } },
+      { giscus: { setConfig: { theme: giscusTheme } } },
       "https://giscus.app"
     );
   }

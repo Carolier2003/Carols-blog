@@ -22,7 +22,7 @@
       data-reactions-enabled="1"
       data-emit-metadata="0"
       data-input-position="bottom"
-      data-theme="light"
+      data-theme="noborder_light"
       data-lang="zh-CN"
       crossorigin="anonymous"
       async></script>
@@ -32,10 +32,9 @@
 <script>
   // Set initial Giscus theme based on current page theme
   function initGiscusTheme() {
-    const theme =
-      document.documentElement.getAttribute("data-theme") === "dark"
-        ? "dark"
-        : "light";
+    const isDark =
+      document.documentElement.getAttribute("data-theme") === "dark";
+    const theme = isDark ? "noborder_dark" : "noborder_light";
     const giscusScript = document.querySelector(
       'script[src="https://giscus.app/client.js"]'
     );
