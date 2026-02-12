@@ -230,9 +230,7 @@ const nextPost =
   /** Attaches copy buttons to code blocks in the document,
    * allowing users to copy code easily. */
   function attachCopyButtons() {
-    const copyButtonLabel = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg>';
-    const copiedButtonLabel = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>';
-
+    const copyButtonLabel = "Copy";
     const codeBlocks = Array.from(document.querySelectorAll("pre"));
 
     for (const codeBlock of codeBlocks) {
@@ -246,23 +244,18 @@ const nextPost =
 
       // Determine the top positioning class
       const topClass = hasFileNameOffset
-        ? "top-[calc(var(--file-name-offset)+0.5rem)]"
-        : "top-2";
+        ? "top-(--file-name-offset)"
+        : "-top-3";
 
       const copyButton = document.createElement("button");
-      copyButton.className = `copy-code absolute end-2 ${topClass} rounded-md bg-background/90 backdrop-blur-sm border border-border/50 p-1.5 text-foreground opacity-0 transition-all duration-200 hover:bg-accent hover:text-background hover:border-accent focus:opacity-100 group-hover:opacity-100`;
+      copyButton.className = `copy-code absolute end-3 ${topClass} rounded bg-muted border border-muted px-2 py-1 text-xs leading-4 text-foreground font-medium`;
       copyButton.innerHTML = copyButtonLabel;
-      copyButton.setAttribute("aria-label", "Copy code");
-      copyButton.setAttribute("title", "Copy");
       codeBlock.setAttribute("tabindex", "0");
+      codeBlock.appendChild(copyButton);
 
-      // wrap codeblock with relative parent element
+      // wrap codebock with relative parent element
       codeBlock?.parentNode?.insertBefore(wrapper, codeBlock);
       wrapper.appendChild(codeBlock);
-
-      // Add group class to wrapper for hover effect
-      wrapper.classList.add("group");
-      codeBlock.appendChild(copyButton);
 
       copyButton.addEventListener("click", async () => {
         await copyCode(codeBlock, copyButton);
@@ -276,17 +269,11 @@ const nextPost =
       await navigator.clipboard.writeText(text ?? "");
 
       // visual feedback that task is completed
-      button.innerHTML = copiedButtonLabel;
-      button.setAttribute("aria-label", "Copied!");
-      button.setAttribute("title", "Copied!");
-      button.classList.add("opacity-100");
+      button.innerText = "Copied";
 
       setTimeout(() => {
-        button.innerHTML = copyButtonLabel;
-        button.setAttribute("aria-label", "Copy code");
-        button.setAttribute("title", "Copy");
-        button.classList.remove("opacity-100");
-      }, 2000);
+        button.innerText = copyButtonLabel;
+      }, 700);
     }
   }
   attachCopyButtons();
