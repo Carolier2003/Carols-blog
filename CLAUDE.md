@@ -102,6 +102,26 @@ Uses flat config (`eslint.config.js`) with:
 - Custom rule: `no-console: "error"`
 - Ignores: `dist/`, `.astro/`, `public/pagefind/`
 
+### Comment System (Custom)
+
+Located at `src/components/Comments.astro`. Uses Cloudflare Worker + D1 for backend storage.
+
+**Important - Scoped CSS Gotcha:**
+Astro's default `<style>` scopes CSS with `data-astro-cid-*` attributes. JavaScript dynamically created elements (like comments loaded from API) won't have this attribute, so styles won't apply. **Solution**: Use `<style is:global>` for components that render dynamic content via client-side JavaScript.
+
+Example:
+```astro
+<!-- ❌ Won't work for dynamically created elements -->
+<style>
+  .comment { ... }  /* becomes .comment[data-astro-cid-xxx] { ... } */
+</style>
+
+<!-- ✅ Works for all elements including dynamically created -->
+<style is:global>
+  .comment { ... }  /* stays as .comment { ... } */
+</style>
+```
+
 ### Important Notes
 
 - **Search in dev mode**: Requires `pnpm build` at least once for Pagefind index to exist
