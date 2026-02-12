@@ -1,10 +1,4 @@
 ---
-/**
- * 评论组件 - 嵌入到文章页面
- *
- * 使用方式：
- * <Comments slug={post.id} />
- */
 interface Props {
   slug: string;
 }
@@ -13,73 +7,78 @@ const { slug } = Astro.props;
 const apiBase = "https://api.kon-carol.xyz";
 ---
 
-<div class="comments-section" data-slug={slug} data-api={apiBase}>
-  <h2 class="comments-title">评论</h2>
-
-  <!-- 评论列表 -->
-  <div class="comments-list" id="comments-list">
-    <div class="loading">加载评论中...</div>
+<div class="comments-wrapper" data-slug={slug} data-api={apiBase}>
+  <div class="comments-header">
+    <h2 class="comments-title">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+      评论
+    </h2>
+    <span class="comments-count" id="comments-count">加载中...</span>
   </div>
 
-  <!-- 评论表单 -->
-  <div class="comment-form-wrapper">
-    <h3 class="form-title">发表评论</h3>
+  <div class="comments-list" id="comments-list">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>正在加载评论...</span>
+    </div>
+  </div>
+
+  <div class="comment-form-container">
+    <div class="form-header">
+      <span class="form-label">发表评论</span>
+      <span class="form-hint" id="reply-hint" style="display: none;"></span>
+    </div>
+
     <form class="comment-form" id="comment-form">
       <input type="hidden" id="parent-id" name="parent_id" value="" />
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="author-name">名称 <span class="required">*</span></label>
+      <div class="form-fields">
+        <div class="input-group">
           <input
             type="text"
             id="author-name"
             name="author_name"
+            placeholder="你的名字 *"
             required
             maxlength="50"
-            placeholder="你的名字"
+            autocomplete="name"
           />
-        </div>
-        <div class="form-group">
-          <label for="author-email">邮箱</label>
           <input
             type="email"
             id="author-email"
             name="author_email"
-            placeholder="用于显示头像（可选）"
+            placeholder="邮箱（用于头像）"
+            autocomplete="email"
           />
         </div>
-      </div>
-
-      <div class="form-group">
-        <label for="author-website">网站</label>
         <input
           type="url"
           id="author-website"
           name="author_website"
-          placeholder="https://your-website.com（可选）"
+          placeholder="个人网站（可选）"
+          autocomplete="url"
         />
       </div>
 
-      <div class="form-group">
-        <label for="comment-content">
-          评论内容 <span class="required">*</span>
-          <small id="reply-to" class="reply-to" style="display: none;"></small>
-        </label>
-        <textarea
-          id="comment-content"
-          name="content"
-          required
-          rows="5"
-          maxlength="5000"
-          placeholder="写下你的想法..."
-        ></textarea>
-      </div>
+      <textarea
+        id="comment-content"
+        name="content"
+        placeholder="写下你的想法..."
+        required
+        maxlength="5000"
+        rows="4"
+      ></textarea>
 
       <div class="form-actions">
-        <button type="button" id="cancel-reply" class="cancel-btn" style="display: none;">
+        <button type="button" class="btn-secondary" id="cancel-reply" style="display: none;">
           取消回复
         </button>
-        <button type="submit" class="submit-btn">发表评论</button>
+        <button type="submit" class="btn-primary">
+          <span class="btn-text">发表评论</span>
+          <span class="btn-loading" style="display: none;">发送中...</span>
+        </button>
       </div>
 
       <div class="form-message" id="form-message"></div>
@@ -88,26 +87,29 @@ const apiBase = "https://api.kon-carol.xyz";
 </div>
 
 <script>
-  // 评论系统前端逻辑
   class CommentSystem {
     private container: HTMLElement;
     private slug: string;
     private apiBase: string;
     private listEl: HTMLElement;
     private formEl: HTMLFormElement;
+    private countEl: HTMLElement;
     private messageEl: HTMLElement;
-    private replyToEl: HTMLElement;
-    private cancelReplyBtn: HTMLButtonElement;
+    private replyHint: HTMLElement;
+    private cancelBtn: HTMLButtonElement;
+    private submitBtn: HTMLButtonElement;
 
     constructor(container: HTMLElement) {
       this.container = container;
       this.slug = container.dataset.slug || "";
       this.apiBase = container.dataset.api || "";
-      this.listEl = container.querySelector("#comments-list") as HTMLElement;
-      this.formEl = container.querySelector("#comment-form") as HTMLFormElement;
-      this.messageEl = container.querySelector("#form-message") as HTMLElement;
-      this.replyToEl = container.querySelector("#reply-to") as HTMLElement;
-      this.cancelReplyBtn = container.querySelector("#cancel-reply") as HTMLButtonElement;
+      this.listEl = container.querySelector("#comments-list")!;
+      this.formEl = container.querySelector("#comment-form")!;
+      this.countEl = container.querySelector("#comments-count")!;
+      this.messageEl = container.querySelector("#form-message")!;
+      this.replyHint = container.querySelector("#reply-hint")!;
+      this.cancelBtn = container.querySelector("#cancel-reply")!;
+      this.submitBtn = container.querySelector(".btn-primary")!;
 
       this.init();
     }
@@ -118,18 +120,15 @@ const apiBase = "https://api.kon-carol.xyz";
     }
 
     private bindEvents() {
-      // 表单提交
       this.formEl.addEventListener("submit", (e) => {
         e.preventDefault();
         this.submitComment();
       });
 
-      // 取消回复
-      this.cancelReplyBtn.addEventListener("click", () => {
+      this.cancelBtn.addEventListener("click", () => {
         this.clearReply();
       });
 
-      // 事件委托：回复按钮
       this.listEl.addEventListener("click", (e) => {
         const target = e.target as HTMLElement;
         if (target.classList.contains("reply-btn")) {
@@ -142,7 +141,6 @@ const apiBase = "https://api.kon-carol.xyz";
       });
     }
 
-    // 加载评论列表
     private async loadComments() {
       try {
         const response = await fetch(`${this.apiBase}/api/comments/${encodeURIComponent(this.slug)}`);
@@ -151,61 +149,78 @@ const apiBase = "https://api.kon-carol.xyz";
         if (data.success) {
           this.renderComments(data.comments, data.total);
         } else {
-          this.listEl.innerHTML = '<div class="error">加载评论失败</div>';
+          this.listEl.innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
         }
       } catch (error) {
         console.error("Failed to load comments:", error);
-        this.listEl.innerHTML = '<div class="error">加载评论失败，请刷新重试</div>';
+        this.listEl.innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
       }
     }
 
-    // 渲染评论列表
     private renderComments(comments: any[], total: number) {
+      this.countEl.textContent = total === 0 ? "暂无评论" : `${total} 条评论`;
+
       if (comments.length === 0) {
-        this.listEl.innerHTML = '<div class="empty">暂无评论，来说两句吧~</div>';
+        this.listEl.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+              <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <p>还没有评论，来说两句吧~</p>
+          </div>
+        `;
         return;
       }
 
       const html = comments.map((comment) => this.renderComment(comment)).join("");
-      this.listEl.innerHTML = `
-        <div class="comments-count">${total} 条评论</div>
-        <div class="comments-tree">${html}</div>
-      `;
+      this.listEl.innerHTML = `<div class="comments-flow">${html}</div>`;
     }
 
-    // 渲染单条评论
     private renderComment(comment: any): string {
-      const date = new Date(comment.created_at).toLocaleString("zh-CN");
+      const date = new Date(comment.created_at).toLocaleDateString("zh-CN", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
       const website = comment.author_website
-        ? `<a href="${this.escapeHtml(comment.author_website)}" target="_blank" rel="noopener" class="author-website">${this.escapeHtml(comment.author_website)}</a>`
+        ? `<a href="${this.escapeHtml(comment.author_website)}" target="_blank" rel="noopener nofollow" class="author-website">
+            ${new URL(comment.author_website).hostname}
+          </a>`
         : "";
 
       const repliesHtml = comment.replies?.length
-        ? `<div class="replies">${comment.replies.map((r: any) => this.renderComment(r)).join("")}</div>`
+        ? `<div class="replies-thread">${comment.replies.map((r: any) => this.renderComment(r)).join("")}</div>`
         : "";
 
       return `
-        <div class="comment" id="comment-${comment.id}">
-          <div class="comment-header">
-            <img src="${comment.avatar_url}" alt="" class="avatar" loading="lazy" />
-            <div class="comment-meta">
-              <div class="author-name">${this.escapeHtml(comment.author_name)}</div>
-              ${website}
-              <time class="comment-time" datetime="${comment.created_at}">${date}</time>
-            </div>
+        <article class="comment-card" id="comment-${comment.id}">
+          <img src="${comment.avatar_url}" alt="" class="comment-avatar" loading="lazy" width="40" height="40" />
+          <div class="comment-body">
+            <header class="comment-header">
+              <div class="comment-meta">
+                <span class="author-name">${this.escapeHtml(comment.author_name)}</span>
+                ${website}
+                <time class="comment-time" datetime="${comment.created_at}" title="${new Date(comment.created_at).toLocaleString("zh-CN")}">${date}</time>
+              </div>
+            </header>
+            <div class="comment-content">${this.formatContent(comment.content)}</div>
+            <footer class="comment-footer">
+              <button type="button" class="reply-btn" data-id="${comment.id}" data-name="${this.escapeHtml(comment.author_name)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/>
+                </svg>
+                回复
+              </button>
+            </footer>
+            ${repliesHtml}
           </div>
-          <div class="comment-content">${this.formatContent(comment.content)}</div>
-          <div class="comment-actions">
-            <button type="button" class="reply-btn" data-id="${comment.id}" data-name="${this.escapeHtml(comment.author_name)}">
-              回复
-            </button>
-          </div>
-          ${repliesHtml}
-        </div>
+        </article>
       `;
     }
 
-    // 提交评论
     private async submitComment() {
       const formData = new FormData(this.formEl);
       const data = {
@@ -213,22 +228,15 @@ const apiBase = "https://api.kon-carol.xyz";
         author_email: formData.get("author_email") as string,
         author_website: formData.get("author_website") as string,
         content: formData.get("content") as string,
-        parent_id: formData.get("parent_id")
-          ? parseInt(formData.get("parent_id") as string)
-          : undefined,
+        parent_id: formData.get("parent_id") ? parseInt(formData.get("parent_id") as string) : undefined,
       };
 
-      // 禁用提交按钮
-      const submitBtn = this.formEl.querySelector(".submit-btn") as HTMLButtonElement;
-      submitBtn.disabled = true;
-      submitBtn.textContent = "发布中...";
+      this.setLoading(true);
 
       try {
         const response = await fetch(`${this.apiBase}/api/comments/${encodeURIComponent(this.slug)}`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
 
@@ -238,7 +246,6 @@ const apiBase = "https://api.kon-carol.xyz";
           this.showMessage(result.message, "success");
           this.formEl.reset();
           this.clearReply();
-          // 刷新评论列表
           await this.loadComments();
         } else {
           this.showMessage(result.message || "发布失败", "error");
@@ -247,33 +254,37 @@ const apiBase = "https://api.kon-carol.xyz";
         console.error("Failed to submit comment:", error);
         this.showMessage("发布失败，请稍后重试", "error");
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "发表评论";
+        this.setLoading(false);
       }
     }
 
-    // 设置回复目标
+    private setLoading(loading: boolean) {
+      const btnText = this.submitBtn.querySelector(".btn-text")!;
+      const btnLoading = this.submitBtn.querySelector(".btn-loading")!;
+
+      this.submitBtn.disabled = loading;
+      btnText.style.display = loading ? "none" : "inline";
+      btnLoading.style.display = loading ? "inline" : "none";
+    }
+
     private setReply(commentId: string, authorName: string) {
       const input = this.formEl.querySelector("#parent-id") as HTMLInputElement;
       input.value = commentId;
-      this.replyToEl.textContent = `回复 ${authorName}`;
-      this.replyToEl.style.display = "inline";
-      this.cancelReplyBtn.style.display = "inline";
+      this.replyHint.textContent = `回复 ${authorName}`;
+      this.replyHint.style.display = "inline";
+      this.cancelBtn.style.display = "inline-flex";
 
-      // 滚动到表单并聚焦
       this.formEl.scrollIntoView({ behavior: "smooth", block: "center" });
       (this.formEl.querySelector("#comment-content") as HTMLTextAreaElement).focus();
     }
 
-    // 清除回复
     private clearReply() {
       const input = this.formEl.querySelector("#parent-id") as HTMLInputElement;
       input.value = "";
-      this.replyToEl.style.display = "none";
-      this.cancelReplyBtn.style.display = "none";
+      this.replyHint.style.display = "none";
+      this.cancelBtn.style.display = "none";
     }
 
-    // 显示消息
     private showMessage(message: string, type: "success" | "error") {
       this.messageEl.textContent = message;
       this.messageEl.className = `form-message ${type}`;
@@ -283,223 +294,311 @@ const apiBase = "https://api.kon-carol.xyz";
       }, 5000);
     }
 
-    // 转义 HTML
     private escapeHtml(text: string): string {
       const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
     }
 
-    // 格式化内容（支持换行）
     private formatContent(content: string): string {
       return this.escapeHtml(content).replace(/\n/g, "<br>");
     }
   }
 
-  // 初始化所有评论组件
   document.addEventListener("DOMContentLoaded", () => {
-    const containers = document.querySelectorAll(".comments-section");
-    containers.forEach((container) => {
+    document.querySelectorAll(".comments-wrapper").forEach((container) => {
       new CommentSystem(container as HTMLElement);
     });
   });
 </script>
 
 <style>
-  .comments-section {
+  .comments-wrapper {
     margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid var(--border);
   }
 
-  .comments-title {
-    font-size: 1.5rem;
-    font-weight: 600;
+  .comments-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 1.5rem;
+  }
+
+  .comments-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
     color: var(--foreground);
+    margin: 0;
   }
 
-  .comments-list {
-    margin-bottom: 2rem;
-  }
-
-  .loading,
-  .empty,
-  .error {
-    padding: 2rem;
-    text-align: center;
-    color: var(--muted);
-    border-radius: 0.5rem;
-    background: var(--background);
-  }
-
-  .error {
-    color: #ef4444;
-    background: #fef2f2;
+  .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--accent);
   }
 
   .comments-count {
-    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+
+  /* 加载状态 */
+  .loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem;
     color: var(--muted);
     font-size: 0.875rem;
   }
 
-  .comment {
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--border);
+  .spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
 
-  .comment:last-child {
-    border-bottom: none;
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
-  .comment-header {
+  /* 空状态 */
+  .empty-state {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    padding: 3rem 1.5rem;
+    color: var(--muted);
+    text-align: center;
   }
 
-  .avatar {
-    width: 40px;
-    height: 40px;
+  .empty-icon {
+    width: 3rem;
+    height: 3rem;
+    opacity: 0.4;
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  /* 评论列表 */
+  .comments-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* 评论卡片 */
+  .comment-card {
+    display: flex;
+    gap: 0.875rem;
+    padding: 1rem;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .comment-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .comment-avatar {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
     background: var(--muted);
   }
 
-  .comment-meta {
+  .comment-body {
     flex: 1;
+    min-width: 0;
+  }
+
+  .comment-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .comment-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.75rem;
   }
 
   .author-name {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--foreground);
+    font-size: 0.9375rem;
   }
 
   .author-website {
     font-size: 0.75rem;
     color: var(--accent);
     text-decoration: none;
-    display: block;
-    margin-top: 0.125rem;
+    opacity: 0.8;
   }
 
   .author-website:hover {
+    opacity: 1;
     text-decoration: underline;
   }
 
   .comment-time {
     font-size: 0.75rem;
     color: var(--muted);
-    display: block;
-    margin-top: 0.125rem;
   }
 
   .comment-content {
     color: var(--foreground);
     line-height: 1.6;
-    margin-left: calc(40px + 0.75rem);
+    font-size: 0.9375rem;
+    word-break: break-word;
   }
 
-  .comment-actions {
-    margin-left: calc(40px + 0.75rem);
-    margin-top: 0.5rem;
+  .comment-footer {
+    margin-top: 0.75rem;
   }
 
   .reply-btn {
-    font-size: 0.875rem;
-    color: var(--accent);
-    background: none;
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
     cursor: pointer;
-    padding: 0;
+    transition: all 0.2s;
   }
 
   .reply-btn:hover {
-    text-decoration: underline;
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--background);
   }
 
-  .replies {
-    margin-left: calc(40px + 0.75rem);
-    margin-top: 1rem;
-    padding-left: 1rem;
+  /* 回复嵌套 */
+  .replies-thread {
+    margin-top: 0.875rem;
+    padding-left: 0.5rem;
     border-left: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
   }
 
-  .replies .comment {
-    padding: 1rem 0;
+  .replies-thread .comment-card {
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
   }
 
-  /* 表单样式 */
-  .comment-form-wrapper {
+  .replies-thread .comment-card:hover {
+    box-shadow: none;
+  }
+
+  .replies-thread .comment-avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  /* 评论表单 */
+  .comment-form-container {
+    margin-top: 2rem;
+    padding: 1.25rem;
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: 0.75rem;
-    padding: 1.5rem;
   }
 
-  .form-title {
-    font-size: 1.125rem;
-    font-weight: 600;
+  .form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 1rem;
-    color: var(--foreground);
   }
 
-  .form-row {
+  .form-label {
+    font-weight: 600;
+    color: var(--foreground);
+    font-size: 0.9375rem;
+  }
+
+  #reply-hint {
+    font-size: 0.8125rem;
+    color: var(--accent);
+    padding: 0.25rem 0.625rem;
+    background: var(--accent);
+    background-opacity: 0.1;
+    border-radius: 0.25rem;
+  }
+
+  .form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .input-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
-  @media (max-width: 640px) {
-    .form-row {
+  @media (max-width: 480px) {
+    .input-group {
       grid-template-columns: 1fr;
     }
   }
 
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    margin-bottom: 0.375rem;
-    color: var(--foreground);
-  }
-
-  .required {
-    color: #ef4444;
-  }
-
-  .reply-to {
-    color: var(--accent);
-    font-weight: normal;
-    margin-left: 0.5rem;
-  }
-
-  .form-group input,
-  .form-group textarea {
+  .comment-form input,
+  .comment-form textarea {
     width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 0.375rem;
-    background: var(--background);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
     color: var(--foreground);
-    font-size: 0.875rem;
-    transition: border-color 0.2s;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
-  .form-group input:focus,
-  .form-group textarea:focus {
+  .comment-form input::placeholder,
+  .comment-form textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .comment-form input:focus,
+  .comment-form textarea:focus {
     outline: none;
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
   }
 
-  .form-group textarea {
+  .comment-form textarea {
     resize: vertical;
     min-height: 100px;
+    margin-bottom: 0.75rem;
   }
 
   .form-actions {
@@ -508,54 +607,77 @@ const apiBase = "https://api.kon-carol.xyz";
     align-items: center;
   }
 
-  .submit-btn {
-    padding: 0.625rem 1.5rem;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 0.375rem;
+  .btn-primary,
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
     font-weight: 500;
+    border-radius: 0.5rem;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    border: none;
   }
 
-  .submit-btn:hover:not(:disabled) {
+  .btn-primary {
+    color: white;
+    background: var(--accent);
+  }
+
+  .btn-primary:hover:not(:disabled) {
     opacity: 0.9;
+    transform: translateY(-1px);
   }
 
-  .submit-btn:disabled {
+  .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 
-  .cancel-btn {
-    padding: 0.625rem 1rem;
-    background: var(--border);
+  .btn-secondary {
     color: var(--foreground);
-    border: none;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    cursor: pointer;
+    background: var(--border);
   }
 
-  .cancel-btn:hover {
+  .btn-secondary:hover {
     opacity: 0.8;
   }
 
   .form-message {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 0.375rem;
+    margin-top: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.5rem;
     font-size: 0.875rem;
   }
 
   .form-message.success {
     color: #166534;
     background: #dcfce7;
+    border: 1px solid #bbf7d0;
   }
 
   .form-message.error {
     color: #991b1b;
     background: #fee2e2;
+    border: 1px solid #fecaca;
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .comment-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  :global([data-theme="dark"]) .form-message.success {
+    background: #14532d;
+    color: #86efac;
+    border-color: #166534;
+  }
+
+  :global([data-theme="dark"]) .form-message.error {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border-color: #991b1b;
   }
 </style>
