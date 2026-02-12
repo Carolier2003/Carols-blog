@@ -32,6 +32,17 @@ function setPreference(): void {
 function reflectPreference(): void {
   document.firstElementChild?.setAttribute("data-theme", themeValue);
 
+  // Sync Giscus theme with page theme
+  const giscusFrame = document.querySelector<HTMLIFrameElement>(
+    "iframe.giscus-frame"
+  );
+  if (giscusFrame) {
+    giscusFrame.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: themeValue } } },
+      "https://giscus.app"
+    );
+  }
+
   document.querySelector("#theme-btn")?.setAttribute("aria-label", themeValue);
 
   // Get a reference to the body element
