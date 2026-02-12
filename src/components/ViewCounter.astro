@@ -84,14 +84,13 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
         }
       });
 
-      // 如果有需要查询的 slug，批量获取
+      // 如果有需要查询的 slug，批量获取（使用 GET 以便 CDN 缓存）
       if (slugsToFetch.length > 0) {
         try {
-          const response = await fetch(`${VIEW_API_BASE}/api/views/batch`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ slugs: slugsToFetch }),
-          });
+          const slugsParam = slugsToFetch.join(",");
+          const response = await fetch(
+            `${VIEW_API_BASE}/api/views/batch?slugs=${encodeURIComponent(slugsParam)}`
+          );
 
           if (response.ok) {
             const data = await response.json();
