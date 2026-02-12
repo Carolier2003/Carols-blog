@@ -10,6 +10,8 @@
 
   <div class="giscus-container">
     <script
+      is:inline
+      data-astro-rerun
       src="https://giscus.app/client.js"
       data-repo="Carolier2003/Carols-blog"
       data-repo-id="R_kgDONlKp-w"
@@ -20,12 +22,32 @@
       data-reactions-enabled="1"
       data-emit-metadata="0"
       data-input-position="bottom"
-      data-theme="preferred_color_scheme"
+      data-theme="light"
       data-lang="zh-CN"
       crossorigin="anonymous"
       async></script>
   </div>
 </div>
+
+<script>
+  // Set initial Giscus theme based on current page theme
+  function initGiscusTheme() {
+    const theme =
+      document.documentElement.getAttribute("data-theme") === "dark"
+        ? "dark"
+        : "light";
+    const giscusScript = document.querySelector(
+      'script[src="https://giscus.app/client.js"]'
+    );
+    if (giscusScript) {
+      giscusScript.setAttribute("data-theme", theme);
+    }
+  }
+
+  // Run immediately and after page transitions
+  initGiscusTheme();
+  document.addEventListener("astro:after-swap", initGiscusTheme);
+</script>
 
 <style>
   .comments-section {
