@@ -3,35 +3,35 @@ layout: ../layouts/AboutLayout.astro
 title: "About"
 ---
 
-AstroPaper is a minimal, accessible and SEO-friendly blog theme built with [Astro](https://astro.build/) and [Tailwind CSS](https://tailwindcss.com/).
+Hi，我是 **Carol**，一名 Java 后端工程师。
 
-![Astro Paper](public/astropaper-og.jpg)
+这个博客是我记录技术成长、分享学习心得的地方。主要关注后端开发、系统架构以及技术生态的方方面面。
 
-AstroPaper provides a solid foundation for blogs, or even portfolios\_ with full markdown support, built-in dark mode, and a clean layout that works out-of-the-box.
+## 技术栈
 
-The blog posts in this theme also serve as guides, docs or example articles\_ making AstroPaper a flexible starting point for your next content-driven site.
+- **语言**: Java, SQL
+- **框架**: Spring Boot, Spring Cloud
+- **数据库**: MySQL, PostgreSQL, Redis
+- **消息队列**: Kafka, RabbitMQ
+- **DevOps**: Docker, Git, Linux
+- **其他**: 正在学习中...
 
-## Features
+## 关于这个博客
 
-AstroPaper comes with a set of useful features that make content publishing easy and effective:
+搭建这个博客的初衷是：
 
-- SEO-friendly
-- Fast performance
-- Light & dark mode
-- Highly customizable
-- Organizable blog posts
-- Responsive & accessible
-- Static search with [PageFind](https://pagefind.app/)
-- Automatic social image generation
+- 📝 记录工作中的技术问题和解决方案
+- 🌱 分享学习新技术的笔记和心得
+- 💡 梳理知识体系，加深理解
+- 🤝 与更多开发者交流成长
 
-and so much more.
+## 联系我
 
-## Show your support
+如果你对我的文章有任何想法或建议，欢迎通过以下方式联系我：
 
-If you like [AstroPaper](https://github.com/satnaing/astro-paper), consider giving it a star ⭐️.
+- GitHub: [@Carolier2003](https://github.com/Carolier2003)
+- X: [@CarolG48818](https://x.com/CarolG48818)
+- Telegram: [@carolier233](https://t.me/carolier233)
+- 邮箱: [jianjiale2003@gmail.com](mailto:jianjiale2003@gmail.com)
 
-Found a bug 🐛 or have an improvement ✨ in mind? Feel free to open an [issue](https://github.com/satnaing/astro-paper/issues), submit a [pull request](https://github.com/satnaing/astro-paper/pulls) or start a [discussion](https://github.com/satnaing/astro-paper/discussions).
-
-If you find this theme helpful, you can also [sponsor me on GitHub](https://github.com/sponsors/satnaing) or [buy me a coffee](https://buymeacoffee.com/satnaing) to show your support — every penny counts.
-
-Kyay zuu! 🙏🏼
+感谢你的访问！
