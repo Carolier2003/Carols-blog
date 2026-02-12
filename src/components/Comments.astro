@@ -1,0 +1,561 @@
+---
+/**
+ * 评论组件 - 嵌入到文章页面
+ *
+ * 使用方式：
+ * <Comments slug={post.id} />
+ */
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const apiBase = "https://api.kon-carol.xyz";
+---
+
+<div class="comments-section" data-slug={slug} data-api={apiBase}>
+  <h2 class="comments-title">评论</h2>
+
+  <!-- 评论列表 -->
+  <div class="comments-list" id="comments-list">
+    <div class="loading">加载评论中...</div>
+  </div>
+
+  <!-- 评论表单 -->
+  <div class="comment-form-wrapper">
+    <h3 class="form-title">发表评论</h3>
+    <form class="comment-form" id="comment-form">
+      <input type="hidden" id="parent-id" name="parent_id" value="" />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="author-name">名称 <span class="required">*</span></label>
+          <input
+            type="text"
+            id="author-name"
+            name="author_name"
+            required
+            maxlength="50"
+            placeholder="你的名字"
+          />
+        </div>
+        <div class="form-group">
+          <label for="author-email">邮箱</label>
+          <input
+            type="email"
+            id="author-email"
+            name="author_email"
+            placeholder="用于显示头像（可选）"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="author-website">网站</label>
+        <input
+          type="url"
+          id="author-website"
+          name="author_website"
+          placeholder="https://your-website.com（可选）"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="comment-content">
+          评论内容 <span class="required">*</span>
+          <small id="reply-to" class="reply-to" style="display: none;"></small>
+        </label>
+        <textarea
+          id="comment-content"
+          name="content"
+          required
+          rows="5"
+          maxlength="5000"
+          placeholder="写下你的想法..."
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" id="cancel-reply" class="cancel-btn" style="display: none;">
+          取消回复
+        </button>
+        <button type="submit" class="submit-btn">发表评论</button>
+      </div>
+
+      <div class="form-message" id="form-message"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // 评论系统前端逻辑
+  class CommentSystem {
+    private container: HTMLElement;
+    private slug: string;
+    private apiBase: string;
+    private listEl: HTMLElement;
+    private formEl: HTMLFormElement;
+    private messageEl: HTMLElement;
+    private replyToEl: HTMLElement;
+    private cancelReplyBtn: HTMLButtonElement;
+
+    constructor(container: HTMLElement) {
+      this.container = container;
+      this.slug = container.dataset.slug || "";
+      this.apiBase = container.dataset.api || "";
+      this.listEl = container.querySelector("#comments-list") as HTMLElement;
+      this.formEl = container.querySelector("#comment-form") as HTMLFormElement;
+      this.messageEl = container.querySelector("#form-message") as HTMLElement;
+      this.replyToEl = container.querySelector("#reply-to") as HTMLElement;
+      this.cancelReplyBtn = container.querySelector("#cancel-reply") as HTMLButtonElement;
+
+      this.init();
+    }
+
+    private init() {
+      this.loadComments();
+      this.bindEvents();
+    }
+
+    private bindEvents() {
+      // 表单提交
+      this.formEl.addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.submitComment();
+      });
+
+      // 取消回复
+      this.cancelReplyBtn.addEventListener("click", () => {
+        this.clearReply();
+      });
+
+      // 事件委托：回复按钮
+      this.listEl.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains("reply-btn")) {
+          const commentId = target.dataset.id;
+          const authorName = target.dataset.name;
+          if (commentId && authorName) {
+            this.setReply(commentId, authorName);
+          }
+        }
+      });
+    }
+
+    // 加载评论列表
+    private async loadComments() {
+      try {
+        const response = await fetch(`${this.apiBase}/api/comments/${encodeURIComponent(this.slug)}`);
+        const data = await response.json();
+
+        if (data.success) {
+          this.renderComments(data.comments, data.total);
+        } else {
+          this.listEl.innerHTML = '<div class="error">加载评论失败</div>';
+        }
+      } catch (error) {
+        console.error("Failed to load comments:", error);
+        this.listEl.innerHTML = '<div class="error">加载评论失败，请刷新重试</div>';
+      }
+    }
+
+    // 渲染评论列表
+    private renderComments(comments: any[], total: number) {
+      if (comments.length === 0) {
+        this.listEl.innerHTML = '<div class="empty">暂无评论，来说两句吧~</div>';
+        return;
+      }
+
+      const html = comments.map((comment) => this.renderComment(comment)).join("");
+      this.listEl.innerHTML = `
+        <div class="comments-count">${total} 条评论</div>
+        <div class="comments-tree">${html}</div>
+      `;
+    }
+
+    // 渲染单条评论
+    private renderComment(comment: any): string {
+      const date = new Date(comment.created_at).toLocaleString("zh-CN");
+      const website = comment.author_website
+        ? `<a href="${this.escapeHtml(comment.author_website)}" target="_blank" rel="noopener" class="author-website">${this.escapeHtml(comment.author_website)}</a>`
+        : "";
+
+      const repliesHtml = comment.replies?.length
+        ? `<div class="replies">${comment.replies.map((r: any) => this.renderComment(r)).join("")}</div>`
+        : "";
+
+      return `
+        <div class="comment" id="comment-${comment.id}">
+          <div class="comment-header">
+            <img src="${comment.avatar_url}" alt="" class="avatar" loading="lazy" />
+            <div class="comment-meta">
+              <div class="author-name">${this.escapeHtml(comment.author_name)}</div>
+              ${website}
+              <time class="comment-time" datetime="${comment.created_at}">${date}</time>
+            </div>
+          </div>
+          <div class="comment-content">${this.formatContent(comment.content)}</div>
+          <div class="comment-actions">
+            <button type="button" class="reply-btn" data-id="${comment.id}" data-name="${this.escapeHtml(comment.author_name)}">
+              回复
+            </button>
+          </div>
+          ${repliesHtml}
+        </div>
+      `;
+    }
+
+    // 提交评论
+    private async submitComment() {
+      const formData = new FormData(this.formEl);
+      const data = {
+        author_name: formData.get("author_name") as string,
+        author_email: formData.get("author_email") as string,
+        author_website: formData.get("author_website") as string,
+        content: formData.get("content") as string,
+        parent_id: formData.get("parent_id")
+          ? parseInt(formData.get("parent_id") as string)
+          : undefined,
+      };
+
+      // 禁用提交按钮
+      const submitBtn = this.formEl.querySelector(".submit-btn") as HTMLButtonElement;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "发布中...";
+
+      try {
+        const response = await fetch(`${this.apiBase}/api/comments/${encodeURIComponent(this.slug)}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showMessage(result.message, "success");
+          this.formEl.reset();
+          this.clearReply();
+          // 刷新评论列表
+          await this.loadComments();
+        } else {
+          this.showMessage(result.message || "发布失败", "error");
+        }
+      } catch (error) {
+        console.error("Failed to submit comment:", error);
+        this.showMessage("发布失败，请稍后重试", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "发表评论";
+      }
+    }
+
+    // 设置回复目标
+    private setReply(commentId: string, authorName: string) {
+      const input = this.formEl.querySelector("#parent-id") as HTMLInputElement;
+      input.value = commentId;
+      this.replyToEl.textContent = `回复 ${authorName}`;
+      this.replyToEl.style.display = "inline";
+      this.cancelReplyBtn.style.display = "inline";
+
+      // 滚动到表单并聚焦
+      this.formEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      (this.formEl.querySelector("#comment-content") as HTMLTextAreaElement).focus();
+    }
+
+    // 清除回复
+    private clearReply() {
+      const input = this.formEl.querySelector("#parent-id") as HTMLInputElement;
+      input.value = "";
+      this.replyToEl.style.display = "none";
+      this.cancelReplyBtn.style.display = "none";
+    }
+
+    // 显示消息
+    private showMessage(message: string, type: "success" | "error") {
+      this.messageEl.textContent = message;
+      this.messageEl.className = `form-message ${type}`;
+      setTimeout(() => {
+        this.messageEl.textContent = "";
+        this.messageEl.className = "form-message";
+      }, 5000);
+    }
+
+    // 转义 HTML
+    private escapeHtml(text: string): string {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 格式化内容（支持换行）
+    private formatContent(content: string): string {
+      return this.escapeHtml(content).replace(/\n/g, "<br>");
+    }
+  }
+
+  // 初始化所有评论组件
+  document.addEventListener("DOMContentLoaded", () => {
+    const containers = document.querySelectorAll(".comments-section");
+    containers.forEach((container) => {
+      new CommentSystem(container as HTMLElement);
+    });
+  });
+</script>
+
+<style>
+  .comments-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .comments-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--foreground);
+  }
+
+  .comments-list {
+    margin-bottom: 2rem;
+  }
+
+  .loading,
+  .empty,
+  .error {
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
+    border-radius: 0.5rem;
+    background: var(--background);
+  }
+
+  .error {
+    color: #ef4444;
+    background: #fef2f2;
+  }
+
+  .comments-count {
+    margin-bottom: 1rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .comment {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comment:last-child {
+    border-bottom: none;
+  }
+
+  .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .comment-meta {
+    flex: 1;
+  }
+
+  .author-name {
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .author-website {
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-decoration: none;
+    display: block;
+    margin-top: 0.125rem;
+  }
+
+  .author-website:hover {
+    text-decoration: underline;
+  }
+
+  .comment-time {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: block;
+    margin-top: 0.125rem;
+  }
+
+  .comment-content {
+    color: var(--foreground);
+    line-height: 1.6;
+    margin-left: calc(40px + 0.75rem);
+  }
+
+  .comment-actions {
+    margin-left: calc(40px + 0.75rem);
+    margin-top: 0.5rem;
+  }
+
+  .reply-btn {
+    font-size: 0.875rem;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .reply-btn:hover {
+    text-decoration: underline;
+  }
+
+  .replies {
+    margin-left: calc(40px + 0.75rem);
+    margin-top: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border);
+  }
+
+  .replies .comment {
+    padding: 1rem 0;
+  }
+
+  /* 表单样式 */
+  .comment-form-wrapper {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+  }
+
+  .form-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--foreground);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.375rem;
+    color: var(--foreground);
+  }
+
+  .required {
+    color: #ef4444;
+  }
+
+  .reply-to {
+    color: var(--accent);
+    font-weight: normal;
+    margin-left: 0.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .submit-btn {
+    padding: 0.625rem 1.5rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .cancel-btn {
+    padding: 0.625rem 1rem;
+    background: var(--border);
+    color: var(--foreground);
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .cancel-btn:hover {
+    opacity: 0.8;
+  }
+
+  .form-message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .form-message.success {
+    color: #166534;
+    background: #dcfce7;
+  }
+
+  .form-message.error {
+    color: #991b1b;
+    background: #fee2e2;
+  }
+</style>
