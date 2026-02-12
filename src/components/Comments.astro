@@ -88,7 +88,6 @@ const apiBase = "https://api.kon-carol.xyz";
 
 <script>
   class CommentSystem {
-    private container: HTMLElement;
     private slug: string;
     private apiBase: string;
     private listEl: HTMLElement;
@@ -100,7 +99,6 @@ const apiBase = "https://api.kon-carol.xyz";
     private submitBtn: HTMLButtonElement;
 
     constructor(container: HTMLElement) {
-      this.container = container;
       this.slug = container.dataset.slug || "";
       this.apiBase = container.dataset.api || "";
       this.listEl = container.querySelector("#comments-list")!;
@@ -259,12 +257,12 @@ const apiBase = "https://api.kon-carol.xyz";
     }
 
     private setLoading(loading: boolean) {
-      const btnText = this.submitBtn.querySelector(".btn-text")!;
-      const btnLoading = this.submitBtn.querySelector(".btn-loading")!;
+      const btnText = this.submitBtn.querySelector(".btn-text") as HTMLElement;
+      const btnLoading = this.submitBtn.querySelector(".btn-loading") as HTMLElement;
 
       this.submitBtn.disabled = loading;
-      btnText.style.display = loading ? "none" : "inline";
-      btnLoading.style.display = loading ? "inline" : "none";
+      if (btnText) btnText.style.display = loading ? "none" : "inline";
+      if (btnLoading) btnLoading.style.display = loading ? "inline" : "none";
     }
 
     private setReply(commentId: string, authorName: string) {
