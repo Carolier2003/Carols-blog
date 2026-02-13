@@ -12,7 +12,9 @@ import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
 import ViewCounter from "@/components/ViewCounter.astro";
 import ViewTracker from "@/components/ViewTracker.astro";
+import ReadingTime from "@/components/ReadingTime.astro";
 import { getPath } from "@/utils/getPath";
+import { getReadingTime } from "@/utils/readingTime";
 import { slugifyStr } from "@/utils/slugify";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
@@ -39,6 +41,9 @@ const {
 } = post.data;
 
 const { Content } = await render(post);
+
+// 计算阅读时间
+const readingTimeMinutes = getReadingTime(post.body || "");
 
 let ogImageUrl: string | undefined;
 
@@ -114,6 +119,8 @@ const nextPost =
       <EditPost {hideEditPost} {post} class="max-sm:hidden" />
       <span aria-hidden="true" class="text-muted">|</span>
       <ViewCounter slug={articleSlug} variant="full" immediate />
+      <span aria-hidden="true" class="text-muted">|</span>
+      <ReadingTime minutes={readingTimeMinutes} />
     </div>
     <article
       id="article"

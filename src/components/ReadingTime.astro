@@ -1,0 +1,15 @@
+---
+import IconClock from "@/assets/icons/IconClock.svg";
+import { formatReadingTime } from "@/utils/readingTime";
+
+interface Props {
+  minutes: number;
+}
+
+const { minutes } = Astro.props;
+---
+
+<span class="inline-flex items-center gap-1 text-sm text-muted">
+  <IconClock class="inline-block size-4" />
+  <span>{formatReadingTime(minutes)}阅读</span>
+</span>
