@@ -1,0 +1,495 @@
+---
+// ImageUploader - Upload images to Cloudflare R2 with Cloudflare Images optimization
+// Usage: <ImageUploader apiUrl="https://api.kon-carol.xyz" />
+
+interface Props {
+  apiUrl?: string;
+}
+
+const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
+---
+
+<div class="image-uploader" data-api-url={apiUrl}>
+  <div class="uploader-header">
+    <h3>图片上传</h3>
+    <p class="uploader-description">
+      支持拖拽上传或点击选择，格式：JPG、PNG、GIF、WebP、AVIF，最大 10MB
+    </p>
+  </div>
+
+  <!-- Upload Area -->
+  <div class="upload-area" id="upload-area">
+    <div class="upload-placeholder">
+      <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
+      <p class="upload-text">点击或拖拽图片到此处上传</p>
+      <p class="upload-hint">支持多文件上传</p>
+    </div>
+    <input type="file" id="file-input" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" />
+  </div>
+
+  <!-- Progress Section -->
+  <div class="progress-section" id="progress-section" style="display: none;">
+    <div class="progress-header">
+      <span class="progress-text">正在上传...</span>
+      <span class="progress-count" id="progress-count">0/0</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="results-section" id="results-section" style="display: none;">
+    <h4>上传结果</h4>
+    <div class="results-grid" id="results-grid"></div>
+  </div>
+
+  <!-- Errors Section -->
+  <div class="errors-section" id="errors-section" style="display: none;">
+    <h4>上传失败</h4>
+    <ul class="errors-list" id="errors-list"></ul>
+  </div>
+</div>
+
+<style>
+  .image-uploader {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+  }
+
+  .uploader-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .uploader-header h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--foreground);
+  }
+
+  .uploader-description {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .upload-area {
+    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .upload-area:hover,
+  .upload-area.drag-over {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+  }
+
+  .upload-placeholder {
+    pointer-events: none;
+  }
+
+  .upload-icon {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    color: var(--muted);
+  }
+
+  .upload-text {
+    font-size: 1rem;
+    color: var(--foreground);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .upload-hint {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .upload-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .progress-section {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    border-radius: 0.5rem;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .progress-text {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .progress-count {
+    color: var(--muted);
+  }
+
+  .progress-bar {
+    height: 0.5rem;
+    background: var(--border);
+    border-radius: 0.25rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 0.25rem;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .results-section,
+  .errors-section {
+    margin-top: 1.5rem;
+  }
+
+  .results-section h4,
+  .errors-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--foreground);
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .result-item {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--background);
+  }
+
+  .result-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    background: var(--border);
+  }
+
+  .result-info {
+    padding: 0.75rem;
+  }
+
+  .result-name {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0 0 0.5rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-size {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0 0 0.75rem 0;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .result-btn {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .result-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .result-btn.copied {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+  }
+
+  .errors-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .error-item {
+    padding: 0.75rem;
+    background: color-mix(in srgb, #ef4444 10%, transparent);
+    border-left: 3px solid #ef4444;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-filename {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+    margin: 0 0 0.25rem 0;
+  }
+
+  .error-message {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0;
+  }
+</style>
+
+<script>
+  // Initialize uploader
+  function initImageUploader() {
+    const container = document.querySelector('.image-uploader');
+    if (!container) return;
+
+    const apiUrl = container.getAttribute('data-api-url') || 'https://api.kon-carol.xyz';
+    const uploadArea = container.querySelector('#upload-area') as HTMLElement;
+    const fileInput = container.querySelector('#file-input') as HTMLInputElement;
+    const progressSection = container.querySelector('#progress-section') as HTMLElement;
+    const progressFill = container.querySelector('#progress-fill') as HTMLElement;
+    const progressCount = container.querySelector('#progress-count') as HTMLElement;
+    const progressText = container.querySelector('.progress-text') as HTMLElement;
+    const resultsSection = container.querySelector('#results-section') as HTMLElement;
+    const resultsGrid = container.querySelector('#results-grid') as HTMLElement;
+    const errorsSection = container.querySelector('#errors-section') as HTMLElement;
+    const errorsList = container.querySelector('#errors-list') as HTMLElement;
+
+    let isUploading = false;
+
+    // Drag and drop handlers
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleFiles(files);
+      }
+    });
+
+    // File input change handler
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files.length > 0) {
+        handleFiles(fileInput.files);
+      }
+    });
+
+    async function handleFiles(files: FileList) {
+      if (isUploading) return;
+
+      // Filter only images
+      const imageFiles = Array.from(files).filter(file =>
+        file.type.startsWith('image/')
+      );
+
+      if (imageFiles.length === 0) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      isUploading = true;
+
+      // Reset and show progress
+      resultsSection.style.display = 'none';
+      resultsGrid.innerHTML = '';
+      errorsSection.style.display = 'none';
+      errorsList.innerHTML = '';
+      progressSection.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressCount.textContent = `0/${imageFiles.length}`;
+      progressText.textContent = '正在上传...';
+
+      const formData = new FormData();
+      imageFiles.forEach(file => formData.append('files', file));
+
+      try {
+        const response = await fetch(`${apiUrl}/api/images/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        // Update progress to 100%
+        progressFill.style.width = '100%';
+        progressCount.textContent = `${imageFiles.length}/${imageFiles.length}`;
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || '上传失败');
+        }
+
+        progressText.textContent = '上传完成';
+
+        // Display uploaded files
+        if (result.data?.uploaded?.length > 0) {
+          displayResults(result.data.uploaded);
+        }
+
+        // Display errors
+        if (result.data?.errors?.length > 0) {
+          displayErrors(result.data.errors);
+        }
+
+        // Reset file input
+        fileInput.value = '';
+
+      } catch (error) {
+        console.error('Upload error:', error);
+        progressText.textContent = '上传失败';
+        displayErrors([{ filename: '上传请求', message: error instanceof Error ? error.message : '网络错误' }]);
+      } finally {
+        isUploading = false;
+      }
+    }
+
+    function displayResults(uploaded: Array<{
+      key: string;
+      originalName: string;
+      size: number;
+      contentType: string;
+      url: string;
+      markdown: string;
+      imagesUrl?: string;
+    }>) {
+      resultsSection.style.display = 'block';
+
+      uploaded.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'result-item';
+
+        const sizeStr = formatFileSize(file.size);
+        const previewUrl = file.imagesUrl || file.url;
+
+        item.innerHTML = `
+          <img class="result-image" src="${previewUrl}" alt="${file.originalName}" loading="lazy" />
+          <div class="result-info">
+            <p class="result-name">${escapeHtml(file.originalName)}</p>
+            <p class="result-size">${sizeStr}</p>
+            <div class="result-actions">
+              <button class="result-btn copy-url" data-url="${file.imagesUrl || file.url}">复制链接</button>
+              <button class="result-btn copy-md" data-md="${escapeHtml(file.markdown)}">复制 Markdown</button>
+            </div>
+          </div>
+        `;
+
+        resultsGrid.appendChild(item);
+      });
+
+      // Add copy button handlers
+      container.querySelectorAll('.copy-url').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const url = btn.getAttribute('data-url');
+          if (url) {
+            copyToClipboard(url, btn as HTMLElement);
+          }
+        });
+      });
+
+      container.querySelectorAll('.copy-md').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const md = btn.getAttribute('data-md');
+          if (md) {
+            copyToClipboard(md, btn as HTMLElement);
+          }
+        });
+      });
+    }
+
+    function displayErrors(errors: Array<{ filename: string; message: string }>) {
+      errorsSection.style.display = 'block';
+
+      errors.forEach(error => {
+        const item = document.createElement('li');
+        item.className = 'error-item';
+        item.innerHTML = `
+          <p class="error-filename">${escapeHtml(error.filename)}</p>
+          <p class="error-message">${escapeHtml(error.message)}</p>
+        `;
+        errorsList.appendChild(item);
+      });
+    }
+
+    async function copyToClipboard(text: string, btn: HTMLElement) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const originalText = btn.textContent;
+        btn.textContent = '已复制';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Copy failed:', err);
+        alert('复制失败，请手动复制');
+      }
+    }
+
+    function formatFileSize(bytes: number): string {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    }
+
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  }
+
+  // Initialize on page load
+  initImageUploader();
+
+  // Re-initialize after Astro page transitions
+  document.addEventListener('astro:after-swap', initImageUploader);
+</script>
