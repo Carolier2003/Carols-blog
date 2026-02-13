@@ -29,21 +29,50 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
   {variant === "compact" && <span class="label">次阅读</span>}
 </span>
 
-<script>
-  import {
-    formatCount,
-    getCachedViews,
-    setCachedViews,
-    isValidBatchResponse,
-    VIEW_API_BASE,
-  } from "@/utils/viewCounter";
+<script is:inline>
+  // ViewCounter inline script - loaded directly in HTML
+  // Note: Using inline script to ensure immediate execution without module bundling issues
+  const VIEW_API_BASE = "https://api.kon-carol.xyz";
+
+  function formatCount(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "k";
+    return num.toString();
+  }
+
+  function getCachedViews() {
+    try {
+      const cached = sessionStorage.getItem("viewCounts");
+      const timestamp = sessionStorage.getItem("viewCountsTimestamp");
+      if (cached && timestamp && Date.now() - parseInt(timestamp) < 300000) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.debug("Failed to read cache:", e);
+    }
+    return {};
+  }
+
+  function setCachedViews(views) {
+    try {
+      sessionStorage.setItem("viewCounts", JSON.stringify(views));
+      sessionStorage.setItem("viewCountsTimestamp", Date.now().toString());
+    } catch (e) {
+      console.debug("Failed to write cache:", e);
+    }
+  }
+
+  function isValidBatchResponse(data) {
+    return data && typeof data === "object" && data.success === true &&
+           typeof data.views === "object" && data.views !== null && !Array.isArray(data.views);
+  }
 
   function initViewCounter() {
     // 确保在浏览器环境执行
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
     // 防止重复初始化：如果已经初始化过，直接跳过
-    const win = window as Window & { __viewCounterInit?: boolean };
+    const win = window;
     if (win.__viewCounterInit) {
       return;
     }
@@ -53,11 +82,11 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
     async function fetchViewCounts() {
       // 获取所有浏览量计数器元素（每次执行时动态获取，确保获取到所有实例）
       const counters = document.querySelectorAll(".view-counter");
-      const slugs: string[] = [];
-      const slugToElements = new Map<string, Element[]>();
+      const slugs = [];
+      const slugToElements = new Map();
 
       counters.forEach((el) => {
-        const slug = (el as HTMLElement).dataset.slug;
+        const slug = el.dataset.slug;
         if (slug) {
           slugs.push(slug);
           if (!slugToElements.has(slug)) {
@@ -75,8 +104,8 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
 
       // 先尝试从缓存读取
       const cachedViews = getCachedViews();
-      const slugsToFetch: string[] = [];
-      const result: Record<string, number> = { ...cachedViews };
+      const slugsToFetch = [];
+      const result = { ...cachedViews };
 
       uniqueSlugs.forEach((slug) => {
         if (cachedViews[slug] === undefined) {
@@ -124,7 +153,7 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
     // 详情页使用 immediate=true 立即加载，其他页面使用 requestIdleCallback 延迟执行
     const counters = document.querySelectorAll(".view-counter");
     const hasImmediate = Array.from(counters).some(
-      (el) => (el as HTMLElement).dataset.immediate === "true"
+      (el) => el.dataset.immediate === "true"
     );
 
     const scheduleFetch = () => {
