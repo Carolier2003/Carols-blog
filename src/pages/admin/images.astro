@@ -1,0 +1,478 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import ImageUploader from "@/components/ImageUploader.astro";
+import { SITE } from "@/config";
+
+// This page is for local/admin use only
+// In production, you may want to add authentication
+---
+
+<Layout title={`图片管理 | ${SITE.title}`}>
+  <Header />
+
+  <main class="mx-auto w-full max-w-4xl px-4 pb-12 pt-8">
+    <div class="mb-8">
+      <h1 class="text-2xl font-semibold text-[var(--foreground)]">图片管理</h1>
+      <p class="mt-2 text-[var(--muted)]">
+        上传和管理博客图片，图片将存储在 Cloudflare R2 并自动通过 Cloudflare Images 进行优化
+      </p>
+    </div>
+
+    <!-- Upload Section -->
+    <section class="mb-12">
+      <ImageUploader apiUrl="https://api.kon-carol.xyz" />
+    </section>
+
+    <!-- Image Gallery Section -->
+    <section class="gallery-section">
+      <h2 class="mb-4 text-xl font-semibold text-[var(--foreground)]">已上传图片</h2>
+      <div class="gallery-grid" id="gallery-grid">
+        <p class="gallery-loading text-[var(--muted)]">加载中...</p>
+      </div>
+      <div class="gallery-pagination" id="gallery-pagination" style="display: none;">
+        <button class="gallery-btn" id="load-more-btn">加载更多</button>
+      </div>
+    </section>
+
+    <!-- API Reference Section -->
+    <section class="api-reference">
+      <h2 class="mb-4 text-xl font-semibold text-[var(--foreground)]">API 参考</h2>
+      <div class="api-cards">
+        <div class="api-card">
+          <h3>图片 URL 格式</h3>
+          <code class="api-code"> https://api.kon-carol.xyz/api/images/view/&#123;key&#125;</code>
+          <p>基础访问 URL，会自动重定向到 Cloudflare Images 优化后的地址</p>
+        </div>
+
+        <div class="api-card">
+          <h3>图片变体参数</h3>
+          <code class="api-code"> ?w=800&h=600&fit=cover&f=webp</code>
+          <ul>
+            <li><strong>w/width:</strong> 宽度（最大 4096）</li>
+            <li><strong>h/height:</strong> 高度（最大 4096）</li>
+            <li><strong>fit:</strong> scale-down, contain, cover, crop, pad</li>
+            <li><strong>f/format:</strong> auto, webp, jpeg, png, gif, avif</li>
+            <li><strong>q/quality:</strong> 质量 1-100</li>
+          </ul>
+        </div>
+
+        <div class="api-card">
+          <h3>Markdown 示例</h3>
+          <pre class="api-code">![描述](https://api.kon-carol.xyz/api/images/view/&#123;key&#125;?w=800&f=webp)</pre>
+          <p>在博客文章中引用图片时，建议指定宽度和格式以获得最佳性能</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .gallery-section {
+    margin-bottom: 3rem;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .gallery-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--background);
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gallery-item-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .gallery-item:hover .gallery-item-overlay {
+    opacity: 1;
+  }
+
+  .gallery-item-name {
+    font-size: 0.75rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .gallery-item-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .gallery-item-btn {
+    flex: 1;
+    padding: 0.375rem;
+    font-size: 0.75rem;
+    border: none;
+    border-radius: 0.25rem;
+    background: white;
+    color: black;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .gallery-item-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .gallery-item-btn.delete {
+    background: #ef4444;
+    color: white;
+  }
+
+  .gallery-item-btn.delete:hover {
+    background: #dc2626;
+  }
+
+  .gallery-loading,
+  .gallery-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+  }
+
+  .gallery-pagination {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .gallery-btn {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .gallery-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .api-reference {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .api-cards {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .api-card {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--background) 50%, transparent);
+  }
+
+  .api-card h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    color: var(--foreground);
+  }
+
+  .api-card p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0 0;
+  }
+
+  .api-card ul {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.25rem;
+  }
+
+  .api-card li {
+    margin-bottom: 0.25rem;
+  }
+
+  .api-code {
+    display: block;
+    padding: 0.75rem;
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    border-radius: 0.375rem;
+    font-family: var(--font-google-sans-code), monospace;
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 0.75rem 1.5rem;
+    background: var(--foreground);
+    color: var(--background);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .toast.error {
+    background: #ef4444;
+    color: white;
+  }
+
+  .toast.success {
+    background: #22c55e;
+    color: white;
+  }
+</style>
+
+<script>
+  const API_URL = 'https://api.kon-carol.xyz';
+  let currentCursor: string | undefined;
+  let isLoading = false;
+
+  interface ImageItem {
+    key: string;
+    size: number;
+    uploadedAt: string;
+    url: string;
+    imagesUrl?: string;
+    customMetadata?: Record<string, string>;
+  }
+
+  async function loadImages(cursor?: string) {
+    if (isLoading) return;
+    isLoading = true;
+
+    const grid = document.getElementById('gallery-grid');
+    const pagination = document.getElementById('gallery-pagination');
+
+    try {
+      const url = new URL(`${API_URL}/api/images`);
+      url.searchParams.set('limit', '24');
+      if (cursor) {
+        url.searchParams.set('cursor', cursor);
+      }
+
+      const response = await fetch(url.toString());
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || '加载失败');
+      }
+
+      // Clear loading/empty state if first load
+      if (!cursor && grid) {
+        grid.innerHTML = '';
+      }
+
+      if (result.data.images.length === 0 && !cursor) {
+        if (grid) {
+          grid.innerHTML = '<p class="gallery-empty">暂无图片</p>';
+        }
+        if (pagination) {
+          pagination.style.display = 'none';
+        }
+        return;
+      }
+
+      // Add images to grid
+      result.data.images.forEach((image: ImageItem) => {
+        addImageToGrid(image);
+      });
+
+      // Update pagination
+      currentCursor = result.data.cursor;
+      if (pagination) {
+        pagination.style.display = result.data.truncated ? 'block' : 'none';
+      }
+    } catch (error) {
+      console.error('加载图片失败:', error);
+      if (grid && !cursor) {
+        grid.innerHTML = '<p class="gallery-empty">加载失败，请刷新页面重试</p>';
+      }
+      showToast('加载失败，请刷新页面重试', 'error');
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function addImageToGrid(image: ImageItem) {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.dataset.key = image.key;
+
+    const previewUrl = image.imagesUrl || image.url;
+    const originalName = image.customMetadata?.originalName || image.key;
+
+    item.innerHTML = `
+      <img src="${previewUrl}" alt="${originalName}" loading="lazy" />
+      <div class="gallery-item-overlay">
+        <p class="gallery-item-name">${escapeHtml(originalName)}</p>
+        <div class="gallery-item-actions">
+          <button class="gallery-item-btn copy-btn" data-url="${image.imagesUrl || image.url}">复制链接</button>
+          <button class="gallery-item-btn delete">删除</button>
+        </div>
+      </div>
+    `;
+
+    // Copy button
+    const copyBtn = item.querySelector('.copy-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const url = copyBtn.getAttribute('data-url');
+        if (url) {
+          await copyToClipboard(url);
+        }
+      });
+    }
+
+    // Delete button
+    const deleteBtn = item.querySelector('.delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`确定要删除 "${originalName}" 吗？`)) {
+          await deleteImage(image.key, item);
+        }
+      });
+    }
+
+    grid.appendChild(item);
+  }
+
+  async function deleteImage(key: string, element: HTMLElement) {
+    try {
+      const response = await fetch(`${API_URL}/api/images/${key}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || '删除失败');
+      }
+
+      // Remove from UI
+      element.remove();
+
+      showToast('删除成功', 'success');
+
+      // Check if grid is empty
+      const grid = document.getElementById('gallery-grid');
+      if (grid && grid.children.length === 0) {
+        grid.innerHTML = '<p class="gallery-empty">暂无图片</p>';
+      }
+    } catch (error) {
+      console.error('删除失败:', error);
+      showToast('删除失败，请重试', 'error');
+    }
+  }
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('已复制到剪贴板', 'success');
+    } catch (err) {
+      console.error('复制失败:', err);
+      showToast('复制失败，请手动复制', 'error');
+    }
+  }
+
+  function showToast(message: string, type: 'success' | 'error' = 'success') {
+    // Remove existing toasts
+    const existing = document.querySelector('.toast');
+    if (existing) {
+      existing.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Initialize
+  function init() {
+    loadImages();
+
+    // Load more button
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        if (currentCursor) {
+          loadImages(currentCursor);
+        }
+      });
+    }
+  }
+
+  // Run on page load
+  init();
+
+  // Re-initialize after Astro page transitions
+  document.addEventListener('astro:after-swap', init);
+</script>
