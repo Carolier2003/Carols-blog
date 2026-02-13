@@ -6,6 +6,7 @@
     "dev": "astro dev",
     "build": "astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
     "preview": "astro preview",
+    "preview:pages": "npm run build && wrangler pages dev dist --port 8788",
     "sync": "astro sync",
     "astro": "astro",
     "format:check": "prettier --check .",
