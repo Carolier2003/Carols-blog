@@ -170,7 +170,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
   .upload-subtitle {
     font-size: 0.875rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     margin: 0;
   }
 
@@ -241,14 +241,13 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   }
 
   .drop-secondary {
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
   }
 
   .drop-hint {
     margin: 0;
     font-size: 0.8125rem;
-    color: var(--muted);
-    opacity: 0.8;
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
   }
 
   /* Drag Overlay */
@@ -314,7 +313,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
   .progress-count {
     font-size: 0.875rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     font-family: var(--font-google-sans-code), monospace;
   }
 
@@ -389,7 +388,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
   .result-name {
     font-size: 0.75rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 80%, var(--muted));
     margin: 0 0 0.375rem;
     white-space: nowrap;
     overflow: hidden;
@@ -398,8 +397,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
   .result-size {
     font-size: 0.6875rem;
-    color: var(--muted);
-    opacity: 0.8;
+    color: color-mix(in srgb, var(--foreground) 50%, var(--muted));
     margin: 0 0 0.75rem;
   }
 
@@ -583,7 +581,6 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
     const apiUrl = container.getAttribute('data-api-url') || 'https://api.kon-carol.xyz';
     const dropZone = container.querySelector('#drop-zone') as HTMLElement;
-    const dragOverlay = container.querySelector('#drag-overlay') as HTMLElement;
     const fileInput = container.querySelector('#file-input') as HTMLInputElement;
     const progressSection = container.querySelector('#progress-section') as HTMLElement;
     const progressFill = container.querySelector('#progress-fill') as HTMLElement;

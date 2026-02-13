@@ -9,7 +9,7 @@ import { SITE } from "@/config";
 <Layout title={`图片管理 | ${SITE.title}`}>
   <Header />
 
-  <main class="mx-auto w-full max-w-6xl px-4 pb-12 pt-8">
+  <main class="app-layout pb-12 pt-8">
     <!-- Page Header -->
     <div class="page-header mb-10">
       <div class="header-content">
@@ -112,7 +112,7 @@ import { SITE } from "@/config";
             <h3>图片访问</h3>
           </div>
           <code class="api-code">
-            https://api.kon-carol.xyz/api/images/view/{key}
+            https://api.kon-carol.xyz/api/images/view/&#123;key&#125;
           </code>
           <p class="api-desc">基础访问 URL，支持实时参数调整尺寸和格式</p>
         </div>
@@ -150,7 +150,7 @@ import { SITE } from "@/config";
             </svg>
             <h3>Markdown 示例</h3>
           </div>
-          <pre class="api-code-block"><code>![图片描述](https://api.kon-carol.xyz/api/images/view/{key}?w=800&h=400&fit=cover&f=webp)</code></pre>
+          <pre class="api-code-block"><code>![图片描述](https://api.kon-carol.xyz/api/images/view/&#123;key&#125;?w=800&#38;h=400&#38;fit=cover&#38;f=webp)</code></pre>
           <p class="api-tip">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -231,7 +231,7 @@ import { SITE } from "@/config";
 
   .page-description {
     font-size: 0.875rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     margin: 0;
   }
 
@@ -257,7 +257,7 @@ import { SITE } from "@/config";
 
   .stat-label {
     font-size: 0.75rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -304,7 +304,7 @@ import { SITE } from "@/config";
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: 0.5rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
     cursor: pointer;
     transition: all 0.2s ease;
   }
@@ -437,7 +437,7 @@ import { SITE } from "@/config";
     align-items: center;
     justify-content: center;
     padding: 4rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
   }
 
   .loading-spinner {
@@ -468,8 +468,7 @@ import { SITE } from "@/config";
   .empty-icon {
     width: 4rem;
     height: 4rem;
-    color: var(--muted);
-    opacity: 0.4;
+    color: color-mix(in srgb, var(--foreground) 40%, var(--muted));
     margin-bottom: 1rem;
   }
 
@@ -482,7 +481,7 @@ import { SITE } from "@/config";
 
   .empty-hint {
     font-size: 0.875rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
     margin: 0;
   }
 
@@ -609,7 +608,7 @@ import { SITE } from "@/config";
 
   .api-desc {
     font-size: 0.8125rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     margin: 0.75rem 0 0;
   }
 
@@ -637,7 +636,7 @@ import { SITE } from "@/config";
   }
 
   .param span {
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
   }
 
   .api-tip {
@@ -647,7 +646,7 @@ import { SITE } from "@/config";
     margin: 0;
     padding: 0.75rem;
     font-size: 0.8125rem;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     background: color-mix(in srgb, var(--accent) 5%, transparent);
     border-radius: 0.5rem;
   }
@@ -769,22 +768,22 @@ import { SITE } from "@/config";
       if (!result.success) throw new Error(result.message || '加载失败');
 
       if (!cursor) {
-        grid.innerHTML = '';
+        if (grid) grid.innerHTML = '';
         totalSize = 0;
       }
 
       const images: ImageItem[] = result.data.images;
 
       if (images.length === 0 && !cursor) {
-        grid.style.display = 'none';
-        empty.style.display = 'flex';
-        pagination.style.display = 'none';
+        if (grid) grid.style.display = 'none';
+        if (empty) empty.style.display = 'flex';
+        if (pagination) pagination.style.display = 'none';
         updateStats(0, 0);
         return;
       }
 
-      grid.style.display = 'grid';
-      empty.style.display = 'none';
+      if (grid) grid.style.display = 'grid';
+      if (empty) empty.style.display = 'none';
 
       images.forEach(image => {
         totalSize += image.size;
@@ -792,10 +791,10 @@ import { SITE } from "@/config";
       });
 
       currentCursor = result.data.cursor;
-      pagination.style.display = result.data.truncated ? 'block' : 'none';
+      if (pagination) pagination.style.display = result.data.truncated ? 'block' : 'none';
 
       updateStats(
-        grid.querySelectorAll('.gallery-item').length,
+        grid?.querySelectorAll('.gallery-item').length || 0,
         totalSize
       );
     } catch (error) {
