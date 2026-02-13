@@ -4,20 +4,40 @@ import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import ImageUploader from "@/components/ImageUploader.astro";
 import { SITE } from "@/config";
-
-// This page is for local/admin use only
-// In production, you may want to add authentication
 ---
 
 <Layout title={`图片管理 | ${SITE.title}`}>
   <Header />
 
-  <main class="mx-auto w-full max-w-4xl px-4 pb-12 pt-8">
-    <div class="mb-8">
-      <h1 class="text-2xl font-semibold text-[var(--foreground)]">图片管理</h1>
-      <p class="mt-2 text-[var(--muted)]">
-        上传和管理博客图片，图片将存储在 Cloudflare R2 并自动通过 Cloudflare Images 进行优化
-      </p>
+  <main class="mx-auto w-full max-w-6xl px-4 pb-12 pt-8">
+    <!-- Page Header -->
+    <div class="page-header mb-10">
+      <div class="header-content">
+        <div class="header-icon-wrapper">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1 class="page-title">图片管理</h1>
+          <p class="page-description">
+            上传和管理博客图片 · 存储于 Cloudflare R2 · 边缘加速分发
+          </p>
+        </div>
+      </div>
+      <div class="header-stats" id="header-stats">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-count">--</span>
+          <span class="stat-label">图片数量</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-storage">--</span>
+          <span class="stat-label">存储空间</span>
+        </div>
+      </div>
     </div>
 
     <!-- Upload Section -->
@@ -25,43 +45,120 @@ import { SITE } from "@/config";
       <ImageUploader apiUrl="https://api.kon-carol.xyz" />
     </section>
 
-    <!-- Image Gallery Section -->
+    <!-- Gallery Section -->
     <section class="gallery-section">
-      <h2 class="mb-4 text-xl font-semibold text-[var(--foreground)]">已上传图片</h2>
-      <div class="gallery-grid" id="gallery-grid">
-        <p class="gallery-loading text-[var(--muted)]">加载中...</p>
+      <div class="section-header">
+        <div class="section-title-wrapper">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+            <path d="M12 12v9"></path>
+            <path d="m16 16-4-4-4 4"></path>
+          </svg>
+          <h2 class="section-title">已上传图片</h2>
+        </div>
+        <button class="refresh-btn" id="refresh-btn" title="刷新列表">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
       </div>
+
+      <div class="gallery-grid" id="gallery-grid">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>加载图片中...</p>
+        </div>
+      </div>
+
+      <div class="gallery-empty" id="gallery-empty" style="display: none;">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+        </div>
+        <p class="empty-title">暂无图片</p>
+        <p class="empty-hint">上传你的第一张图片开始使用</p>
+      </div>
+
       <div class="gallery-pagination" id="gallery-pagination" style="display: none;">
-        <button class="gallery-btn" id="load-more-btn">加载更多</button>
+        <button class="load-more-btn" id="load-more-btn">
+          <span>加载更多</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
       </div>
     </section>
 
     <!-- API Reference Section -->
-    <section class="api-reference">
-      <h2 class="mb-4 text-xl font-semibold text-[var(--foreground)]">API 参考</h2>
-      <div class="api-cards">
+    <section class="api-section">
+      <div class="section-header">
+        <div class="section-title-wrapper">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path>
+            <polygon points="12 15 17 21 7 21 12 15"></polygon>
+          </svg>
+          <h2 class="section-title">API 参考</h2>
+        </div>
+      </div>
+
+      <div class="api-grid">
         <div class="api-card">
-          <h3>图片 URL 格式</h3>
-          <code class="api-code"> https://api.kon-carol.xyz/api/images/view/&#123;key&#125;</code>
-          <p>基础访问 URL，会自动重定向到 Cloudflare Images 优化后的地址</p>
+          <div class="api-card-header">
+            <div class="api-method">GET</div>
+            <h3>图片访问</h3>
+          </div>
+          <code class="api-code">
+            https://api.kon-carol.xyz/api/images/view/{key}
+          </code>
+          <p class="api-desc">基础访问 URL，支持实时参数调整尺寸和格式</p>
         </div>
 
         <div class="api-card">
-          <h3>图片变体参数</h3>
-          <code class="api-code"> ?w=800&h=600&fit=cover&f=webp</code>
-          <ul>
-            <li><strong>w/width:</strong> 宽度（最大 4096）</li>
-            <li><strong>h/height:</strong> 高度（最大 4096）</li>
-            <li><strong>fit:</strong> scale-down, contain, cover, crop, pad</li>
-            <li><strong>f/format:</strong> auto, webp, jpeg, png, gif, avif</li>
-            <li><strong>q/quality:</strong> 质量 1-100</li>
-          </ul>
+          <div class="api-card-header">
+            <div class="api-method api-method-params">PARAMS</div>
+            <h3>优化参数</h3>
+          </div>
+          <div class="api-params">
+            <div class="param">
+              <code>w</code>
+              <span>宽度 (max 4096)</span>
+            </div>
+            <div class="param">
+              <code>h</code>
+              <span>高度 (max 4096)</span>
+            </div>
+            <div class="param">
+              <code>fit</code>
+              <span>cover, contain, crop...</span>
+            </div>
+            <div class="param">
+              <code>f</code>
+              <span>webp, avif, jpeg...</span>
+            </div>
+          </div>
         </div>
 
-        <div class="api-card">
-          <h3>Markdown 示例</h3>
-          <pre class="api-code">![描述](https://api.kon-carol.xyz/api/images/view/&#123;key&#125;?w=800&f=webp)</pre>
-          <p>在博客文章中引用图片时，建议指定宽度和格式以获得最佳性能</p>
+        <div class="api-card api-card-full">
+          <div class="api-card-header">
+            <svg class="api-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <h3>Markdown 示例</h3>
+          </div>
+          <pre class="api-code-block"><code>![图片描述](https://api.kon-carol.xyz/api/images/view/{key}?w=800&h=400&fit=cover&f=webp)</code></pre>
+          <p class="api-tip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            建议指定 <code>w</code> 和 <code>f=webp</code> 以获得最佳加载性能
+          </p>
         </div>
       </div>
     </section>
@@ -71,35 +168,210 @@ import { SITE } from "@/config";
 </Layout>
 
 <style>
+  /* Page Header */
+  .page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 8%, var(--background)) 0%,
+      var(--background) 100%
+    );
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--accent) 0%,
+      color-mix(in srgb, var(--accent) 70%, white) 50%,
+      var(--accent) 100%
+    );
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-icon-wrapper {
+    width: 3rem;
+    height: 3rem;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--accent);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0 0 0.25rem;
+  }
+
+  .page-description {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: var(--font-google-sans-code), monospace;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 2rem;
+    background: var(--border);
+  }
+
+  /* Section Header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .section-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .section-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--accent);
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0;
+  }
+
+  .refresh-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .refresh-btn:hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .refresh-btn svg {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.3s ease;
+  }
+
+  .refresh-btn:hover svg {
+    transform: rotate(180deg);
+  }
+
+  /* Gallery Section */
   .gallery-section {
     margin-bottom: 3rem;
   }
 
   .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 1rem;
   }
 
   .gallery-item {
     position: relative;
     aspect-ratio: 1;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     overflow: hidden;
     border: 1px solid var(--border);
     background: var(--background);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .gallery-item:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 8%, transparent);
+    transform: translateY(-2px);
   }
 
   .gallery-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .gallery-item:hover img {
+    transform: scale(1.05);
   }
 
   .gallery-item-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      transparent 100%
+    );
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -114,156 +386,348 @@ import { SITE } from "@/config";
 
   .gallery-item-name {
     font-size: 0.75rem;
-    color: white;
+    color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.5rem;
   }
 
   .gallery-item-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.375rem;
   }
 
   .gallery-item-btn {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
     padding: 0.375rem;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
     border: none;
-    border-radius: 0.25rem;
-    background: white;
-    color: black;
+    border-radius: 0.375rem;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    backdrop-filter: blur(8px);
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .gallery-item-btn:hover {
-    background: var(--accent);
-    color: white;
+    background: rgba(255, 255, 255, 0.25);
   }
 
-  .gallery-item-btn.delete {
-    background: #ef4444;
-    color: white;
+  .gallery-item-btn svg {
+    width: 0.75rem;
+    height: 0.75rem;
   }
 
   .gallery-item-btn.delete:hover {
-    background: #dc2626;
+    background: #ef4444;
   }
 
-  .gallery-loading,
-  .gallery-empty {
+  /* Loading State */
+  .loading-state {
     grid-column: 1 / -1;
-    text-align: center;
-    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
     color: var(--muted);
   }
 
-  .gallery-pagination {
-    margin-top: 1.5rem;
+  .loading-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Empty State */
+  .gallery-empty {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
     text-align: center;
   }
 
-  .gallery-btn {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--background);
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    color: var(--muted);
+    opacity: 0.4;
+    margin-bottom: 1rem;
+  }
+
+  .empty-title {
+    font-size: 1rem;
+    font-weight: 500;
     color: var(--foreground);
+    margin: 0 0 0.375rem;
+  }
+
+  .empty-hint {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* Pagination */
+  .gallery-pagination {
+    margin-top: 2rem;
+    text-align: center;
+  }
+
+  .load-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
-  .gallery-btn:hover {
-    background: var(--accent);
-    color: white;
+  .load-more-btn:hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
     border-color: var(--accent);
+    color: var(--accent);
   }
 
-  .api-reference {
+  .load-more-btn svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* API Section */
+  .api-section {
     margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid var(--border);
   }
 
-  .api-cards {
+  .api-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1rem;
   }
 
   .api-card {
-    padding: 1rem;
+    padding: 1.25rem;
+    background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--background) 50%, transparent);
+    border-radius: 0.75rem;
+  }
+
+  .api-card-full {
+    grid-column: 1 / -1;
+  }
+
+  .api-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .api-method {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #16a34a;
+    background: color-mix(in srgb, #16a34a 10%, transparent);
+    border-radius: 0.25rem;
+    font-family: var(--font-google-sans-code), monospace;
+  }
+
+  .api-method-params {
+    color: #0891b2;
+    background: color-mix(in srgb, #0891b2 10%, transparent);
   }
 
   .api-card h3 {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 600;
-    margin: 0 0 0.75rem 0;
     color: var(--foreground);
+    margin: 0;
   }
 
-  .api-card p {
-    font-size: 0.875rem;
-    color: var(--muted);
-    margin: 0.5rem 0 0 0;
-  }
-
-  .api-card ul {
-    font-size: 0.875rem;
-    color: var(--muted);
-    margin: 0.5rem 0 0 0;
-    padding-left: 1.25rem;
-  }
-
-  .api-card li {
-    margin-bottom: 0.25rem;
+  .api-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--accent);
   }
 
   .api-code {
     display: block;
     padding: 0.75rem;
-    background: color-mix(in srgb, var(--foreground) 5%, transparent);
-    border-radius: 0.375rem;
-    font-family: var(--font-google-sans-code), monospace;
     font-size: 0.8125rem;
+    font-family: var(--font-google-sans-code), monospace;
     color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    border-radius: 0.5rem;
     overflow-x: auto;
-    white-space: pre-wrap;
     word-break: break-all;
   }
 
+  .api-code-block {
+    margin: 0 0 0.875rem;
+    padding: 1rem;
+    font-size: 0.8125rem;
+    font-family: var(--font-google-sans-code), monospace;
+    line-height: 1.6;
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    border-radius: 0.5rem;
+    overflow-x: auto;
+  }
+
+  .api-code-block code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .api-desc {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    margin: 0.75rem 0 0;
+  }
+
+  .api-params {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .param {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .param code {
+    min-width: 3rem;
+    padding: 0.25rem 0.5rem;
+    font-family: var(--font-google-sans-code), monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-radius: 0.25rem;
+  }
+
+  .param span {
+    color: var(--muted);
+  }
+
+  .api-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    border-radius: 0.5rem;
+  }
+
+  .api-tip svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .api-tip code {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius: 0.25rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      text-align: center;
+      padding: 1.25rem;
+    }
+
+    .header-content {
+      flex-direction: column;
+    }
+
+    .header-stats {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .gallery-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .api-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Toast */
   .toast {
     position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    padding: 0.75rem 1.5rem;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.875rem 1.25rem;
     background: var(--foreground);
     color: var(--background);
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     font-size: 0.875rem;
+    font-weight: 500;
     z-index: 1000;
     opacity: 0;
-    transition: all 0.3s ease;
+    transform: translateY(1rem);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 40px color-mix(in srgb, var(--foreground) 15%, transparent);
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
   }
 
   .toast.show {
-    transform: translateX(-50%) translateY(0);
     opacity: 1;
-  }
-
-  .toast.error {
-    background: #ef4444;
-    color: white;
+    transform: translateY(0);
   }
 
   .toast.success {
-    background: #22c55e;
+    background: #16a34a;
+    color: white;
+  }
+
+  .toast.error {
+    background: #dc2626;
     color: white;
   }
 </style>
@@ -272,6 +736,7 @@ import { SITE } from "@/config";
   const API_URL = 'https://api.kon-carol.xyz';
   let currentCursor: string | undefined;
   let isLoading = false;
+  let totalSize = 0;
 
   interface ImageItem {
     key: string;
@@ -287,55 +752,58 @@ import { SITE } from "@/config";
     isLoading = true;
 
     const grid = document.getElementById('gallery-grid');
+    const empty = document.getElementById('gallery-empty');
     const pagination = document.getElementById('gallery-pagination');
+    const refreshBtn = document.getElementById('refresh-btn');
+
+    if (refreshBtn) refreshBtn.style.pointerEvents = 'none';
 
     try {
       const url = new URL(`${API_URL}/api/images`);
       url.searchParams.set('limit', '24');
-      if (cursor) {
-        url.searchParams.set('cursor', cursor);
-      }
+      if (cursor) url.searchParams.set('cursor', cursor);
 
       const response = await fetch(url.toString());
       const result = await response.json();
 
-      if (!result.success) {
-        throw new Error(result.message || '加载失败');
-      }
+      if (!result.success) throw new Error(result.message || '加载失败');
 
-      // Clear loading/empty state if first load
-      if (!cursor && grid) {
+      if (!cursor) {
         grid.innerHTML = '';
+        totalSize = 0;
       }
 
-      if (result.data.images.length === 0 && !cursor) {
-        if (grid) {
-          grid.innerHTML = '<p class="gallery-empty">暂无图片</p>';
-        }
-        if (pagination) {
-          pagination.style.display = 'none';
-        }
+      const images: ImageItem[] = result.data.images;
+
+      if (images.length === 0 && !cursor) {
+        grid.style.display = 'none';
+        empty.style.display = 'flex';
+        pagination.style.display = 'none';
+        updateStats(0, 0);
         return;
       }
 
-      // Add images to grid
-      result.data.images.forEach((image: ImageItem) => {
+      grid.style.display = 'grid';
+      empty.style.display = 'none';
+
+      images.forEach(image => {
+        totalSize += image.size;
         addImageToGrid(image);
       });
 
-      // Update pagination
       currentCursor = result.data.cursor;
-      if (pagination) {
-        pagination.style.display = result.data.truncated ? 'block' : 'none';
-      }
+      pagination.style.display = result.data.truncated ? 'block' : 'none';
+
+      updateStats(
+        grid.querySelectorAll('.gallery-item').length,
+        totalSize
+      );
     } catch (error) {
       console.error('加载图片失败:', error);
-      if (grid && !cursor) {
-        grid.innerHTML = '<p class="gallery-empty">加载失败，请刷新页面重试</p>';
-      }
-      showToast('加载失败，请刷新页面重试', 'error');
+      showToast('加载失败，请刷新重试', 'error');
     } finally {
       isLoading = false;
+      if (refreshBtn) refreshBtn.style.pointerEvents = '';
     }
   }
 
@@ -351,17 +819,28 @@ import { SITE } from "@/config";
     const originalName = image.customMetadata?.originalName || image.key;
 
     item.innerHTML = `
-      <img src="${previewUrl}" alt="${originalName}" loading="lazy" />
+      <img src="${previewUrl}" alt="${escapeHtml(originalName)}" loading="lazy" />
       <div class="gallery-item-overlay">
         <p class="gallery-item-name">${escapeHtml(originalName)}</p>
         <div class="gallery-item-actions">
-          <button class="gallery-item-btn copy-btn" data-url="${image.imagesUrl || image.url}">复制链接</button>
-          <button class="gallery-item-btn delete">删除</button>
+          <button class="gallery-item-btn copy-btn" data-url="${image.imagesUrl || image.url}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            复制
+          </button>
+          <button class="gallery-item-btn delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            删除
+          </button>
         </div>
       </div>
     `;
 
-    // Copy button
     const copyBtn = item.querySelector('.copy-btn');
     if (copyBtn) {
       copyBtn.addEventListener('click', async (e) => {
@@ -373,13 +852,12 @@ import { SITE } from "@/config";
       });
     }
 
-    // Delete button
     const deleteBtn = item.querySelector('.delete');
     if (deleteBtn) {
       deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (confirm(`确定要删除 "${originalName}" 吗？`)) {
-          await deleteImage(image.key, item);
+          await deleteImage(image.key, item, image.size);
         }
       });
     }
@@ -387,28 +865,28 @@ import { SITE } from "@/config";
     grid.appendChild(item);
   }
 
-  async function deleteImage(key: string, element: HTMLElement) {
+  async function deleteImage(key: string, element: HTMLElement, size: number) {
     try {
       const response = await fetch(`${API_URL}/api/images/${key}`, {
         method: 'DELETE',
       });
 
       const result = await response.json();
+      if (!result.success) throw new Error(result.message || '删除失败');
 
-      if (!result.success) {
-        throw new Error(result.message || '删除失败');
-      }
-
-      // Remove from UI
-      element.remove();
+      element.style.opacity = '0';
+      element.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        element.remove();
+        totalSize -= size;
+        const grid = document.getElementById('gallery-grid');
+        updateStats(
+          grid?.querySelectorAll('.gallery-item').length || 0,
+          totalSize
+        );
+      }, 200);
 
       showToast('删除成功', 'success');
-
-      // Check if grid is empty
-      const grid = document.getElementById('gallery-grid');
-      if (grid && grid.children.length === 0) {
-        grid.innerHTML = '<p class="gallery-empty">暂无图片</p>';
-      }
     } catch (error) {
       console.error('删除失败:', error);
       showToast('删除失败，请重试', 'error');
@@ -419,30 +897,41 @@ import { SITE } from "@/config";
     try {
       await navigator.clipboard.writeText(text);
       showToast('已复制到剪贴板', 'success');
-    } catch (err) {
-      console.error('复制失败:', err);
+    } catch {
       showToast('复制失败，请手动复制', 'error');
     }
   }
 
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
-    // Remove existing toasts
+  function updateStats(count: number, size: number) {
+    const countEl = document.getElementById('stat-count');
+    const storageEl = document.getElementById('stat-storage');
+
+    if (countEl) countEl.textContent = count.toString();
+    if (storageEl) storageEl.textContent = formatFileSize(size);
+  }
+
+  function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  function showToast(message: string, type: 'success' | 'error') {
     const existing = document.querySelector('.toast');
-    if (existing) {
-      existing.remove();
-    }
+    if (existing) existing.remove();
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = message;
+
+    const iconSvg = type === 'success'
+      ? '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.125rem;height:1.125rem"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+      : '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.125rem;height:1.125rem"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+
+    toast.innerHTML = `${iconSvg}${message}`;
     document.body.appendChild(toast);
 
-    // Trigger animation
-    requestAnimationFrame(() => {
-      toast.classList.add('show');
-    });
-
-    // Hide after 3 seconds
+    requestAnimationFrame(() => toast.classList.add('show'));
     setTimeout(() => {
       toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
@@ -455,24 +944,22 @@ import { SITE } from "@/config";
     return div.innerHTML;
   }
 
-  // Initialize
   function init() {
     loadImages();
 
-    // Load more button
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener('click', () => {
-        if (currentCursor) {
-          loadImages(currentCursor);
-        }
+        if (currentCursor) loadImages(currentCursor);
       });
+    }
+
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => loadImages());
     }
   }
 
-  // Run on page load
   init();
-
-  // Re-initialize after Astro page transitions
   document.addEventListener('astro:after-swap', init);
 </script>

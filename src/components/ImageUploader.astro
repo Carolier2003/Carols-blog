@@ -1,6 +1,6 @@
 ---
-// ImageUploader - Upload images to Cloudflare R2 with Cloudflare Images optimization
-// Usage: <ImageUploader apiUrl="https://api.kon-carol.xyz" />
+// ImageUploader - Modern drag-and-drop image upload component
+// Optimized with glassmorphism design system
 
 interface Props {
   apiUrl?: string;
@@ -9,130 +9,294 @@ interface Props {
 const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 ---
 
-<div class="image-uploader" data-api-url={apiUrl}>
-  <div class="uploader-header">
-    <h3>图片上传</h3>
-    <p class="uploader-description">
-      支持拖拽上传或点击选择，格式：JPG、PNG、GIF、WebP、AVIF，最大 10MB
-    </p>
-  </div>
-
-  <!-- Upload Area -->
-  <div class="upload-area" id="upload-area">
-    <div class="upload-placeholder">
+<div class="upload-container" data-api-url={apiUrl}>
+  <!-- Header -->
+  <div class="upload-header">
+    <div class="upload-icon-wrapper">
       <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="17 8 12 3 7 8"></polyline>
         <line x1="12" y1="3" x2="12" y2="15"></line>
       </svg>
-      <p class="upload-text">点击或拖拽图片到此处上传</p>
-      <p class="upload-hint">支持多文件上传</p>
     </div>
-    <input type="file" id="file-input" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" />
+    <h3 class="upload-title">上传图片</h3>
+    <p class="upload-subtitle">拖拽文件到此处或点击选择</p>
+  </div>
+
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="drop-zone">
+    <input
+      type="file"
+      id="file-input"
+      multiple
+      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml"
+      class="file-input"
+    />
+
+    <div class="drop-content">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+      </div>
+      <p class="drop-text">
+        <span class="drop-primary">点击选择图片</span>
+        <span class="drop-secondary">或拖拽文件到此处</span>
+      </p>
+      <p class="drop-hint">
+        支持 JPG、PNG、GIF、WebP、AVIF、SVG · 最大 10MB
+      </p>
+    </div>
+
+    <!-- Drag Overlay -->
+    <div class="drag-overlay" id="drag-overlay">
+      <div class="drag-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </div>
+      <p class="drag-text">释放以上传文件</p>
+    </div>
   </div>
 
   <!-- Progress Section -->
   <div class="progress-section" id="progress-section" style="display: none;">
     <div class="progress-header">
-      <span class="progress-text">正在上传...</span>
+      <span class="progress-label">正在上传</span>
       <span class="progress-count" id="progress-count">0/0</span>
     </div>
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress-fill"></div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill"></div>
     </div>
   </div>
 
   <!-- Results Section -->
   <div class="results-section" id="results-section" style="display: none;">
-    <h4>上传结果</h4>
+    <div class="results-header">
+      <svg class="results-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span>上传成功</span>
+    </div>
     <div class="results-grid" id="results-grid"></div>
   </div>
 
   <!-- Errors Section -->
   <div class="errors-section" id="errors-section" style="display: none;">
-    <h4>上传失败</h4>
+    <div class="errors-header">
+      <svg class="errors-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span>上传失败</span>
+    </div>
     <ul class="errors-list" id="errors-list"></ul>
   </div>
 </div>
 
 <style>
-  .image-uploader {
-    background: var(--background);
+  .upload-container {
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 5%, var(--background)) 0%,
+      var(--background) 100%
+    );
     border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
+    border-radius: 1rem;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
   }
 
-  .uploader-header {
+  .upload-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--accent) 0%,
+      color-mix(in srgb, var(--accent) 70%, white) 50%,
+      var(--accent) 100%
+    );
+  }
+
+  /* Header */
+  .upload-header {
+    text-align: center;
     margin-bottom: 1.5rem;
   }
 
-  .uploader-header h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem 0;
-    color: var(--foreground);
-  }
-
-  .uploader-description {
-    font-size: 0.875rem;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  .upload-area {
-    position: relative;
-    border: 2px dashed var(--border);
-    border-radius: 0.5rem;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .upload-area:hover,
-  .upload-area.drag-over {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
-  }
-
-  .upload-placeholder {
-    pointer-events: none;
+  .upload-icon-wrapper {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    transition: all 0.3s ease;
   }
 
   .upload-icon {
-    width: 3rem;
-    height: 3rem;
-    margin: 0 auto 1rem;
-    color: var(--muted);
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--accent);
+    transition: transform 0.3s ease;
   }
 
-  .upload-text {
-    font-size: 1rem;
+  .upload-container:hover .upload-icon-wrapper {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .upload-container:hover .upload-icon {
+    transform: translateY(-1px);
+  }
+
+  .upload-title {
+    font-size: 1.25rem;
+    font-weight: 600;
     color: var(--foreground);
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.375rem;
   }
 
-  .upload-hint {
+  .upload-subtitle {
     font-size: 0.875rem;
     color: var(--muted);
     margin: 0;
   }
 
-  .upload-area input[type="file"] {
+  /* Drop Zone */
+  .drop-zone {
+    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: 0.75rem;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: color-mix(in srgb, var(--background) 50%, transparent);
+  }
+
+  .drop-zone:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 3%, var(--background));
+  }
+
+  .drop-zone.drag-active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--background));
+  }
+
+  .file-input {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
     cursor: pointer;
+    z-index: 10;
   }
 
+  .drop-content {
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .drop-zone.drag-active .drop-content {
+    opacity: 0;
+  }
+
+  .drop-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1.25rem;
+    color: var(--muted);
+    opacity: 0.6;
+    transition: all 0.3s ease;
+  }
+
+  .drop-zone:hover .drop-icon {
+    color: var(--accent);
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  .drop-text {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .drop-primary {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .drop-secondary {
+    color: var(--muted);
+  }
+
+  .drop-hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    opacity: 0.8;
+  }
+
+  /* Drag Overlay */
+  .drag-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--accent) 10%, var(--background));
+    border-radius: 0.625rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .drop-zone.drag-active .drag-overlay {
+    opacity: 1;
+  }
+
+  .drag-icon {
+    width: 3rem;
+    height: 3rem;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    animation: bounce 1s ease infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .drag-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  /* Progress Section */
   .progress-section {
     margin-top: 1.5rem;
-    padding: 1rem;
+    padding: 1.25rem;
     background: color-mix(in srgb, var(--accent) 5%, transparent);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
   }
 
   .progress-header {
@@ -140,44 +304,57 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
-    font-size: 0.875rem;
   }
 
-  .progress-text {
-    color: var(--foreground);
+  .progress-label {
+    font-size: 0.875rem;
     font-weight: 500;
+    color: var(--foreground);
   }
 
   .progress-count {
+    font-size: 0.875rem;
     color: var(--muted);
+    font-family: var(--font-google-sans-code), monospace;
   }
 
-  .progress-bar {
+  .progress-bar-bg {
     height: 0.5rem;
     background: var(--border);
-    border-radius: 0.25rem;
+    border-radius: 9999px;
     overflow: hidden;
   }
 
-  .progress-fill {
+  .progress-bar-fill {
     height: 100%;
-    background: var(--accent);
-    border-radius: 0.25rem;
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
+    border-radius: 9999px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     width: 0%;
   }
 
-  .results-section,
-  .errors-section {
+  /* Results Section */
+  .results-section {
     margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: color-mix(in srgb, #22c55e 5%, transparent);
+    border: 1px solid color-mix(in srgb, #22c55e 20%, transparent);
+    border-radius: 0.75rem;
   }
 
-  .results-section h4,
-  .errors-section h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 1rem 0;
-    color: var(--foreground);
+  .results-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #16a34a;
+  }
+
+  .results-icon {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   .results-grid {
@@ -186,11 +363,17 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     gap: 1rem;
   }
 
-  .result-item {
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    overflow: hidden;
+  .result-card {
     background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .result-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--foreground) 5%, transparent);
   }
 
   .result-image {
@@ -201,22 +384,23 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   }
 
   .result-info {
-    padding: 0.75rem;
+    padding: 0.875rem;
   }
 
   .result-name {
     font-size: 0.75rem;
     color: var(--muted);
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.375rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .result-size {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     color: var(--muted);
-    margin: 0 0 0.75rem 0;
+    opacity: 0.8;
+    margin: 0 0 0.75rem;
   }
 
   .result-actions {
@@ -226,10 +410,15 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
   .result-btn {
     flex: 1;
-    padding: 0.375rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem;
     font-size: 0.75rem;
+    font-weight: 500;
     border: 1px solid var(--border);
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     background: var(--background);
     color: var(--foreground);
     cursor: pointer;
@@ -237,9 +426,14 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   }
 
   .result-btn:hover {
-    background: var(--accent);
-    color: white;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
     border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .result-btn svg {
+    width: 0.875rem;
+    height: 0.875rem;
   }
 
   .result-btn.copied {
@@ -248,25 +442,68 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     color: white;
   }
 
+  /* Errors Section */
+  .errors-section {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: color-mix(in srgb, #ef4444 5%, transparent);
+    border: 1px solid color-mix(in srgb, #ef4444 20%, transparent);
+    border-radius: 0.75rem;
+  }
+
+  .errors-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #dc2626;
+  }
+
+  .errors-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
   .errors-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .error-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
     padding: 0.75rem;
-    background: color-mix(in srgb, #ef4444 10%, transparent);
+    background: var(--background);
+    border-radius: 0.5rem;
     border-left: 3px solid #ef4444;
-    border-radius: 0.25rem;
-    margin-bottom: 0.5rem;
+  }
+
+  .error-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #ef4444;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .error-content {
+    flex: 1;
+    min-width: 0;
   }
 
   .error-filename {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
     color: var(--foreground);
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.25rem;
+    word-break: break-all;
   }
 
   .error-message {
@@ -274,21 +511,83 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     color: var(--muted);
     margin: 0;
   }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.875rem 1.25rem;
+    background: var(--foreground);
+    color: var(--background);
+    border-radius: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 40px color-mix(in srgb, var(--foreground) 15%, transparent);
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .toast.success {
+    background: #16a34a;
+    color: white;
+  }
+
+  .toast.error {
+    background: #dc2626;
+    color: white;
+  }
+
+  .toast-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex-shrink: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .upload-container {
+      padding: 1.5rem;
+    }
+
+    .drop-zone {
+      padding: 1.75rem;
+    }
+
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .toast {
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+    }
+  }
 </style>
 
 <script>
-  // Initialize uploader
   function initImageUploader() {
-    const container = document.querySelector('.image-uploader');
+    const container = document.querySelector('.upload-container') as HTMLElement | null;
     if (!container) return;
 
     const apiUrl = container.getAttribute('data-api-url') || 'https://api.kon-carol.xyz';
-    const uploadArea = container.querySelector('#upload-area') as HTMLElement;
+    const dropZone = container.querySelector('#drop-zone') as HTMLElement;
+    const dragOverlay = container.querySelector('#drag-overlay') as HTMLElement;
     const fileInput = container.querySelector('#file-input') as HTMLInputElement;
     const progressSection = container.querySelector('#progress-section') as HTMLElement;
     const progressFill = container.querySelector('#progress-fill') as HTMLElement;
     const progressCount = container.querySelector('#progress-count') as HTMLElement;
-    const progressText = container.querySelector('.progress-text') as HTMLElement;
     const resultsSection = container.querySelector('#results-section') as HTMLElement;
     const resultsGrid = container.querySelector('#results-grid') as HTMLElement;
     const errorsSection = container.querySelector('#errors-section') as HTMLElement;
@@ -296,29 +595,37 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
     let isUploading = false;
 
-    // Drag and drop handlers
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.classList.add('drag-over');
+    // Drag events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
     });
 
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.classList.remove('drag-over');
+    function preventDefaults(e: Event) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => {
+        dropZone.classList.add('drag-active');
+      }, false);
     });
 
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.classList.remove('drag-over');
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => {
+        dropZone.classList.remove('drag-active');
+      }, false);
+    });
 
-      const files = e.dataTransfer?.files;
-      if (files && files.length > 0) {
-        handleFiles(files);
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      if (dt?.files.length) {
+        handleFiles(dt.files);
       }
     });
 
-    // File input change handler
     fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files.length > 0) {
+      if (fileInput.files?.length) {
         handleFiles(fileInput.files);
       }
     });
@@ -326,30 +633,19 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     async function handleFiles(files: FileList) {
       if (isUploading) return;
 
-      // Filter only images
-      const imageFiles = Array.from(files).filter(file =>
-        file.type.startsWith('image/')
-      );
-
-      if (imageFiles.length === 0) {
-        alert('请选择图片文件');
+      const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      if (!imageFiles.length) {
+        showToast('请选择图片文件', 'error');
         return;
       }
 
       isUploading = true;
-
-      // Reset and show progress
-      resultsSection.style.display = 'none';
-      resultsGrid.innerHTML = '';
-      errorsSection.style.display = 'none';
-      errorsList.innerHTML = '';
+      resetUI();
       progressSection.style.display = 'block';
-      progressFill.style.width = '0%';
       progressCount.textContent = `0/${imageFiles.length}`;
-      progressText.textContent = '正在上传...';
 
       const formData = new FormData();
-      imageFiles.forEach(file => formData.append('files', file));
+      imageFiles.forEach(f => formData.append('files', f));
 
       try {
         const response = await fetch(`${apiUrl}/api/images/upload`, {
@@ -357,45 +653,46 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
           body: formData,
         });
 
-        // Update progress to 100%
         progressFill.style.width = '100%';
         progressCount.textContent = `${imageFiles.length}/${imageFiles.length}`;
 
         const result = await response.json();
 
-        if (!response.ok) {
-          throw new Error(result.message || '上传失败');
-        }
+        if (!response.ok) throw new Error(result.message || '上传失败');
 
-        progressText.textContent = '上传完成';
-
-        // Display uploaded files
         if (result.data?.uploaded?.length > 0) {
-          displayResults(result.data.uploaded);
+          showResults(result.data.uploaded);
+          showToast(`成功上传 ${result.data.uploaded.length} 个文件`, 'success');
         }
 
-        // Display errors
         if (result.data?.errors?.length > 0) {
-          displayErrors(result.data.errors);
+          showErrors(result.data.errors);
         }
 
-        // Reset file input
         fileInput.value = '';
-
       } catch (error) {
         console.error('Upload error:', error);
-        progressText.textContent = '上传失败';
-        displayErrors([{ filename: '上传请求', message: error instanceof Error ? error.message : '网络错误' }]);
+        showToast(error instanceof Error ? error.message : '上传失败', 'error');
       } finally {
         isUploading = false;
+        setTimeout(() => {
+          progressSection.style.display = 'none';
+          progressFill.style.width = '0%';
+        }, 500);
       }
     }
 
-    function displayResults(uploaded: Array<{
+    function resetUI() {
+      resultsSection.style.display = 'none';
+      resultsGrid.innerHTML = '';
+      errorsSection.style.display = 'none';
+      errorsList.innerHTML = '';
+    }
+
+    function showResults(uploaded: Array<{
       key: string;
       originalName: string;
       size: number;
-      contentType: string;
       url: string;
       markdown: string;
       imagesUrl?: string;
@@ -403,56 +700,75 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
       resultsSection.style.display = 'block';
 
       uploaded.forEach(file => {
-        const item = document.createElement('div');
-        item.className = 'result-item';
+        const card = document.createElement('div');
+        card.className = 'result-card';
 
         const sizeStr = formatFileSize(file.size);
         const previewUrl = file.imagesUrl || file.url;
+        const displayUrl = file.imagesUrl || file.url;
 
-        item.innerHTML = `
-          <img class="result-image" src="${previewUrl}" alt="${file.originalName}" loading="lazy" />
+        card.innerHTML = `
+          <img class="result-image" src="${previewUrl}" alt="${escapeHtml(file.originalName)}" loading="lazy" />
           <div class="result-info">
             <p class="result-name">${escapeHtml(file.originalName)}</p>
             <p class="result-size">${sizeStr}</p>
             <div class="result-actions">
-              <button class="result-btn copy-url" data-url="${file.imagesUrl || file.url}">复制链接</button>
-              <button class="result-btn copy-md" data-md="${escapeHtml(file.markdown)}">复制 Markdown</button>
+              <button class="result-btn copy-url" data-url="${displayUrl}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                链接
+              </button>
+              <button class="result-btn copy-md" data-md="${escapeHtml(file.markdown)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Markdown
+              </button>
             </div>
           </div>
         `;
 
-        resultsGrid.appendChild(item);
+        resultsGrid.appendChild(card);
       });
 
-      // Add copy button handlers
-      container.querySelectorAll('.copy-url').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const url = btn.getAttribute('data-url');
-          if (url) {
-            copyToClipboard(url, btn as HTMLElement);
-          }
+      if (container) {
+        container.querySelectorAll('.copy-url').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const url = btn.getAttribute('data-url');
+            if (url) copyToClipboard(url, btn as HTMLElement);
+          });
         });
-      });
 
-      container.querySelectorAll('.copy-md').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const md = btn.getAttribute('data-md');
-          if (md) {
-            copyToClipboard(md, btn as HTMLElement);
-          }
+        container.querySelectorAll('.copy-md').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const md = btn.getAttribute('data-md');
+            if (md) copyToClipboard(md, btn as HTMLElement);
+          });
         });
-      });
+      }
     }
 
-    function displayErrors(errors: Array<{ filename: string; message: string }>) {
+    function showErrors(errors: Array<{ filename: string; message: string }>) {
       errorsSection.style.display = 'block';
 
       errors.forEach(error => {
         const item = document.createElement('li');
         item.className = 'error-item';
         item.innerHTML = `
-          <p class="error-filename">${escapeHtml(error.filename)}</p>
-          <p class="error-message">${escapeHtml(error.message)}</p>
+          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <div class="error-content">
+            <p class="error-filename">${escapeHtml(error.filename)}</p>
+            <p class="error-message">${escapeHtml(error.message)}</p>
+          </div>
         `;
         errorsList.appendChild(item);
       });
@@ -461,17 +777,44 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     async function copyToClipboard(text: string, btn: HTMLElement) {
       try {
         await navigator.clipboard.writeText(text);
-        const originalText = btn.textContent;
-        btn.textContent = '已复制';
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          已复制
+        `;
         btn.classList.add('copied');
+        showToast('已复制到剪贴板', 'success');
+
         setTimeout(() => {
-          btn.textContent = originalText;
+          btn.innerHTML = originalHTML;
           btn.classList.remove('copied');
         }, 2000);
-      } catch (err) {
-        console.error('Copy failed:', err);
-        alert('复制失败，请手动复制');
+      } catch {
+        showToast('复制失败，请手动复制', 'error');
       }
+    }
+
+    function showToast(message: string, type: 'success' | 'error') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success'
+        ? '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+        : '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+
+      toast.innerHTML = `${iconSvg}${message}`;
+      document.body.appendChild(toast);
+
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
 
     function formatFileSize(bytes: number): string {
@@ -487,9 +830,6 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     }
   }
 
-  // Initialize on page load
   initImageUploader();
-
-  // Re-initialize after Astro page transitions
   document.addEventListener('astro:after-swap', initImageUploader);
 </script>

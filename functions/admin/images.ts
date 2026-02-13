@@ -1,22 +1,28 @@
-import type { PagesFunction } from '@cloudflare/workers-types';
-
 /**
  * Admin Images Page - Basic Auth Protection
  *
  * This function protects the /admin/images page with HTTP Basic Authentication.
  * Credentials are checked against environment variables:
  * - ADMIN_USERNAME (default: admin)
- * - ADMIN_PASSWORD (default: changeme)
+ * - ADMIN_PASSWORD (default: admin123)
  *
  * To set credentials in production:
  * npx wrangler pages secret put ADMIN_USERNAME
  * npx wrangler pages secret put ADMIN_PASSWORD
  */
 
-export const onRequest: PagesFunction<{
+interface Env {
   ADMIN_USERNAME?: string;
   ADMIN_PASSWORD?: string;
-}> = async (context) => {
+}
+
+interface Context {
+  request: Request;
+  env: Env;
+  next: () => Promise<Response>;
+}
+
+export const onRequest = async (context: Context): Promise<Response> => {
   const { request, env, next } = context;
 
   // Get credentials from environment variables with defaults
