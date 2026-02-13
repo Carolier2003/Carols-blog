@@ -118,9 +118,9 @@ const nextPost =
       >
       <EditPost {hideEditPost} {post} class="max-sm:hidden" />
       <span aria-hidden="true" class="text-muted">|</span>
-      <ViewCounter slug={articleSlug} variant="full" immediate />
-      <span aria-hidden="true" class="text-muted">|</span>
       <ReadingTime minutes={readingTimeMinutes} />
+      <span aria-hidden="true" class="text-muted">|</span>
+      <ViewCounter slug={articleSlug} variant="full" immediate />
     </div>
     <article
       id="article"
