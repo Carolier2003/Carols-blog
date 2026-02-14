@@ -323,12 +323,27 @@ const { frontmatter } = Astro.props;
               if (response.ok) {
                 const result = await response.json();
                 if (result.success && result.data && result.data.weeks) {
+                  // Check if data changed (compare total or last date)
+                  let dataChanged = true;
+                  if (cached) {
+                    try {
+                      const oldData = JSON.parse(cached);
+                      const oldLastDate = oldData.weeks[oldData.weeks.length - 1]?.[6]?.date;
+                      const newLastDate = result.data.weeks[result.data.weeks.length - 1]?.[6]?.date;
+                      dataChanged = oldData.total !== result.data.total ||
+                                    oldLastDate !== newLastDate ||
+                                    oldData.weeks.length !== result.data.weeks.length;
+                    } catch (e) {
+                      dataChanged = true;
+                    }
+                  }
+
                   // Update cache
                   result.data.cachedAt = Date.now();
                   sessionStorage.setItem('contributions', JSON.stringify(result.data));
 
-                  // Only re-render if data changed significantly
-                  if (!hasStaleData || JSON.stringify(result.data.weeks) !== JSON.stringify(JSON.parse(cached).weeks)) {
+                  // Re-render if no cached data or data changed
+                  if (!hasStaleData || dataChanged) {
                     renderContributions(result.data);
                   }
                 }
