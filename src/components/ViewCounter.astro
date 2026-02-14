@@ -71,14 +71,7 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
     // 确保在浏览器环境执行
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    // 防止重复初始化：如果已经初始化过，直接跳过
-    const win = window;
-    if (win.__viewCounterInit) {
-      return;
-    }
-    win.__viewCounterInit = true;
-
-    // 批量获取浏览量（只执行一次）
+    // 批量获取浏览量
     async function fetchViewCounts() {
       // 获取所有浏览量计数器元素（每次执行时动态获取，确保获取到所有实例）
       const counters = document.querySelectorAll(".view-counter");
