@@ -8,47 +8,64 @@
     <h3>评论</h3>
   </div>
 
-  <div class="giscus-container">
-    <script
-      is:inline
-      data-astro-rerun
-      src="https://giscus.app/client.js"
-      data-repo="Carolier2003/Carols-blog"
-      data-repo-id="R_kgDOROT-5Q"
-      data-category="Announcements"
-      data-category-id="DIC_kwDOROT-5c4C2R8n"
-      data-mapping="pathname"
-      data-strict="0"
-      data-reactions-enabled="1"
-      data-emit-metadata="0"
-      data-input-position="bottom"
-      data-theme="https://blog.kon-carol.xyz/giscus-light.css"
-      data-lang="zh-CN"
-      crossorigin="anonymous"
-      async></script>
+  <div class="giscus-container" id="giscus-container">
+    <!-- Giscus script will be injected here -->
   </div>
 </div>
 
-<script>
-  // Set initial Giscus theme based on current page theme
-  const baseUrl = "https://blog.kon-carol.xyz";
-  function initGiscusTheme() {
-    const isDark =
-      document.documentElement.getAttribute("data-theme") === "dark";
-    const theme = isDark
-      ? `${baseUrl}/giscus-dark.css`
-      : `${baseUrl}/giscus-light.css`;
-    const giscusScript = document.querySelector(
-      'script[src="https://giscus.app/client.js"]'
-    );
-    if (giscusScript) {
-      giscusScript.setAttribute("data-theme", theme);
-    }
-  }
+<script is:inline data-astro-rerun>
+  (function() {
+    const baseUrl = "https://blog.kon-carol.xyz";
 
-  // Run immediately and after page transitions
-  initGiscusTheme();
-  document.addEventListener("astro:after-swap", initGiscusTheme);
+    function cleanupGiscus() {
+      // Remove existing giscus iframe and script
+      const existingIframe = document.querySelector('iframe.giscus-frame');
+      if (existingIframe) {
+        existingIframe.remove();
+      }
+      const existingScript = document.querySelector('script[data-giscus]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      const container = document.getElementById("giscus-container");
+      if (container) {
+        container.innerHTML = "";
+      }
+    }
+
+    function loadGiscus() {
+      const container = document.getElementById("giscus-container");
+      if (!container) return;
+
+      // Clean up first
+      cleanupGiscus();
+
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const theme = isDark ? `${baseUrl}/giscus-dark.css` : `${baseUrl}/giscus-light.css`;
+
+      const script = document.createElement("script");
+      script.src = "https://giscus.app/client.js";
+      script.setAttribute("data-repo", "Carolier2003/Carols-blog");
+      script.setAttribute("data-repo-id", "R_kgDOROT-5Q");
+      script.setAttribute("data-category", "Announcements");
+      script.setAttribute("data-category-id", "DIC_kwDOROT-5c4C2R8n");
+      script.setAttribute("data-mapping", "pathname");
+      script.setAttribute("data-strict", "0");
+      script.setAttribute("data-reactions-enabled", "1");
+      script.setAttribute("data-emit-metadata", "0");
+      script.setAttribute("data-input-position", "bottom");
+      script.setAttribute("data-theme", theme);
+      script.setAttribute("data-lang", "zh-CN");
+      script.setAttribute("crossorigin", "anonymous");
+      script.setAttribute("data-giscus", "true");
+      script.async = true;
+
+      container.appendChild(script);
+    }
+
+    // Load on initial page load and after View Transitions (data-astro-rerun handles re-execution)
+    loadGiscus();
+  })();
 </script>
 
 <style>
