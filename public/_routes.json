@@ -1,5 +1,5 @@
 {
   "version": 1,
   "include": ["/admin/images"],
-  "exclude": ["/", "/about", "/archives", "/posts/*", "/search", "/tags", "/tags/*", "/rss.xml", "/robots.txt", "/favicon.svg", "/_astro/*", "/pagefind/*", "/giscus-*.css"]
+  "exclude": ["/", "/about", "/about/", "/archives", "/archives/", "/posts/*", "/search", "/search/", "/tags", "/tags/", "/rss.xml", "/robots.txt", "/favicon.svg", "/_astro/*", "/pagefind/*", "/giscus-*.css", "/avatar.png", "/og.png", "/sitemap-index.xml", "/sitemap-0.xml"]
 }
