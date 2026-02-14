@@ -35,9 +35,6 @@ const generateData = () => {
 
 const data = generateData();
 
-// Calculate total contributions
-const totalContributions = data.flat().reduce((sum, day) => sum + day.count, 0);
-
 // Calculate month labels based on actual data
 // Find the first day of each month in the data
 const monthLabels: { month: string; weekIndex: number }[] = [];
@@ -82,9 +79,9 @@ data.forEach((week, weekIndex) => {
 
       <!-- Heatmap squares -->
       <div class="heatmap-squares">
-        {data.map((week, weekIndex) => (
+        {data.map((week) => (
           <div class="heatmap-week">
-            {week.map((day, dayIndex) => (
+            {week.map((day) => (
               <div
                 class={`heatmap-day level-${day.level}`}
                 title={`${day.date}: ${day.count} contributions`}
@@ -297,8 +294,9 @@ data.forEach((week, weekIndex) => {
 
     days.forEach(day => {
       day.addEventListener('mouseenter', (e) => {
-        const date = e.target.dataset.date;
-        const count = parseInt(e.target.dataset.count, 10);
+        const target = e.target as HTMLElement;
+        const date = target.dataset.date || '';
+        const count = parseInt(target.dataset.count || '0', 10);
 
         // Format date: "Feb 14, 2026"
         const dateObj = new Date(date);
@@ -318,9 +316,10 @@ data.forEach((week, weekIndex) => {
       });
 
       day.addEventListener('mousemove', (e) => {
+        const mouseEvent = e as MouseEvent;
         // Position tooltip above the cursor
-        const x = e.pageX;
-        const y = e.pageY - 10;
+        const x = mouseEvent.pageX;
+        const y = mouseEvent.pageY - 10;
 
         // Adjust if tooltip would go off screen
         const rect = tooltip.getBoundingClientRect();
