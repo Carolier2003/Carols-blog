@@ -15,6 +15,13 @@ const getNavCount = () => {
 // Track processed navigation counts per component instance
 const processedNavCounts = new Set<number>();
 
+// Get cached contributions data from global
+declare global {
+  interface Window {
+    __contributionsData?: ContributionResponse;
+  }
+}
+
 interface ContributionDay {
   date: string;
   count: number;
@@ -111,6 +118,24 @@ export default function GitHubContributions({ username }: Props) {
   useEffect(() => {
     const currentNavCount = getNavCount();
 
+    function loadData(data: ContributionResponse) {
+      setWeeks(data.weeks);
+      setStats({
+        total: data.total,
+        github: data.githubTotal,
+        gitcode: data.gitcodeTotal,
+      });
+      setLoading(false);
+    }
+
+    // Check if global data is already available
+    if (window.__contributionsData) {
+      loadData(window.__contributionsData);
+      processedNavCounts.add(currentNavCount);
+      setNavKey(currentNavCount);
+      return;
+    }
+
     // Always fetch on mount for this nav count (prevents duplicate fetches for same VT)
     if (!processedNavCounts.has(currentNavCount)) {
       processedNavCounts.add(currentNavCount);
@@ -120,15 +145,8 @@ export default function GitHubContributions({ username }: Props) {
         .then(r => r.json())
         .then(result => {
           if (result.success) {
-            const data = result.data as ContributionResponse;
-            setWeeks(data.weeks);
-            setStats({
-              total: data.total,
-              github: data.githubTotal,
-              gitcode: data.gitcodeTotal,
-            });
+            loadData(result.data);
           }
-          setLoading(false);
         })
         .catch(err => {
           console.error('Failed to fetch contributions:', err);
@@ -138,39 +156,15 @@ export default function GitHubContributions({ username }: Props) {
         });
     }
 
-    // Listen for View Transitions page load
-    const handleVtPageLoad = (e: CustomEvent) => {
-      const newCount = e.detail.count;
-      if (!processedNavCounts.has(newCount)) {
-        processedNavCounts.add(newCount);
-        setNavKey(newCount);
-        fetch(`${API_BASE}/api/contributions`)
-          .then(r => r.json())
-          .then(result => {
-            if (result.success) {
-              const data = result.data as ContributionResponse;
-              setWeeks(data.weeks);
-              setStats({
-                total: data.total,
-                github: data.githubTotal,
-                gitcode: data.gitcodeTotal,
-              });
-            }
-            setLoading(false);
-          })
-          .catch(err => {
-            console.error('Failed to fetch contributions:', err);
-            setError(err.message);
-            setWeeks(generateMockData());
-            setLoading(false);
-          });
-      }
+    // Listen for data loaded event from global script
+    const handleDataLoaded = (e: CustomEvent) => {
+      loadData(e.detail as ContributionResponse);
     };
 
-    document.addEventListener('vt:page-load', handleVtPageLoad as EventListener);
+    document.addEventListener('contributions:data-loaded', handleDataLoaded as EventListener);
 
     return () => {
-      document.removeEventListener('vt:page-load', handleVtPageLoad as EventListener);
+      document.removeEventListener('contributions:data-loaded', handleDataLoaded as EventListener);
     };
   }, []);
 

@@ -151,6 +151,43 @@ const structuredData = {
       });
     </script>
 
+    <!-- Global Contributions data fetcher -->
+    <script is:inline>
+      (function() {
+        const API_BASE = "https://api.kon-carol.xyz";
+
+        async function fetchContributions() {
+          // Only fetch on about page
+          if (!window.location.pathname.includes('/about')) return;
+
+          // Check if already fetched for this navigation
+          if (window.__contributionsData) return;
+
+          try {
+            const response = await fetch(`${API_BASE}/api/contributions`);
+            if (response.ok) {
+              const result = await response.json();
+              if (result.success) {
+                window.__contributionsData = result.data;
+                // Dispatch event to notify React component
+                document.dispatchEvent(new CustomEvent('contributions:data-loaded', {
+                  detail: result.data
+                }));
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch contributions:', err);
+          }
+        }
+
+        // Fetch on initial load
+        fetchContributions();
+
+        // Fetch after View Transitions
+        document.addEventListener('astro:page-load', fetchContributions);
+      })();
+    </script>
+
     <!-- Global View Transitions handler for ViewCounter and Comments -->
     <script is:inline>
       (function() {
