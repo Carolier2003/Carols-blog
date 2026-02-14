@@ -118,6 +118,20 @@ export default function GitHubContributions({ username }: Props) {
     };
   }, [fetchContributions]);
 
+  // Also listen to astro:page-load for compatibility
+  useEffect(() => {
+    const handleAstroPageLoad = () => {
+      const newCount = (window as any).__vtNavigationCount || 0;
+      setNavKey(newCount);
+      fetchContributions();
+    };
+
+    document.addEventListener('astro:page-load', handleAstroPageLoad);
+    return () => {
+      document.removeEventListener('astro:page-load', handleAstroPageLoad);
+    };
+  }, [fetchContributions]);
+
   // Format date for display
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);

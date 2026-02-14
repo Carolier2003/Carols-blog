@@ -94,7 +94,7 @@ const { frontmatter } = Astro.props;
 
       <!-- Contribution Heatmap -->
       <div class="mb-8">
-        <GitHubContributions username="Carolier2003" client:only="react" />
+        <GitHubContributions username="Carolier2003" client:load />
       </div>
 
       <h1 class="text-2xl tracking-wider sm:text-3xl">{frontmatter.title}</h1>
