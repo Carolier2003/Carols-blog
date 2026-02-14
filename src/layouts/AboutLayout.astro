@@ -3,7 +3,8 @@ import type { MarkdownLayoutProps } from "astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Breadcrumb from "@/components/Breadcrumb.astro";
-import ContributionHeatmap from "@/components/ContributionHeatmap.astro";
+import GitHubContributions from "@/components/GitHubContributions.tsx";
+// import ContributionHeatmap from "@/components/ContributionHeatmap.astro";
 import Layout from "./Layout.astro";
 import { SITE } from "@/config";
 
@@ -93,7 +94,7 @@ const { frontmatter } = Astro.props;
 
       <!-- Contribution Heatmap -->
       <div class="mb-8">
-        <ContributionHeatmap />
+        <GitHubContributions username="Carolier2003" client:only="react" />
       </div>
 
       <h1 class="text-2xl tracking-wider sm:text-3xl">{frontmatter.title}</h1>

@@ -14,13 +14,19 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@astrojs/react": "^4.4.2",
     "@astrojs/rss": "^4.0.14",
     "@astrojs/sitemap": "^3.6.0",
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "astro": "^5.16.6",
     "dayjs": "^1.11.19",
     "lodash.kebabcase": "^4.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-github-contribution-calendar": "^2.2.0",
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
     "satori": "^0.18.3",
@@ -44,6 +50,5 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.51.0"
-  },
-  "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
+  }
 }
