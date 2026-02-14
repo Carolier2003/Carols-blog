@@ -293,19 +293,26 @@ const { frontmatter } = Astro.props;
             document.getElementById('contributions-content').style.display = 'none';
 
             try {
+              console.log('[Contributions] Fetching from:', `${API_BASE}/api/contributions`);
               const response = await fetch(`${API_BASE}/api/contributions`);
+              console.log('[Contributions] Response status:', response.status);
+
               if (response.ok) {
                 const result = await response.json();
-                if (result.success && result.data && result.data.weeks) {
+                console.log('[Contributions] Result:', result);
+
+                if (result.success && result.data && result.data.weeks && Array.isArray(result.data.weeks)) {
+                  console.log('[Contributions] Rendering with', result.data.weeks.length, 'weeks');
                   renderContributions(result.data);
                 } else {
+                  console.error('[Contributions] Invalid data format:', result);
                   throw new Error('Invalid data format');
                 }
               } else {
                 throw new Error(`HTTP ${response.status}`);
               }
             } catch (err) {
-              console.error('Failed to fetch contributions:', err);
+              console.error('[Contributions] Failed to fetch:', err);
               showError();
             }
           }
