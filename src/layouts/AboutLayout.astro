@@ -289,42 +289,54 @@ const { frontmatter } = Astro.props;
           async function fetchContributions() {
             // Check cache first
             const cached = sessionStorage.getItem('contributions');
+            let hasStaleData = false;
+
             if (cached) {
               try {
                 const data = JSON.parse(cached);
-                // Validate cache is not too old (5 minutes)
-                if (data.cachedAt && Date.now() - data.cachedAt < 5 * 60 * 1000) {
+                // Use stale data immediately (up to 24 hours old)
+                if (data.cachedAt && Date.now() - data.cachedAt < 24 * 60 * 60 * 1000) {
                   renderContributions(data);
-                  return;
+                  hasStaleData = true;
+
+                  // If cache is fresh (< 5 min), skip network request
+                  if (Date.now() - data.cachedAt < 5 * 60 * 1000) {
+                    return;
+                  }
                 }
               } catch (e) {
                 // Invalid cache, continue to fetch
               }
             }
 
-            // Show skeleton, hide error
-            document.getElementById('contributions-skeleton').style.display = 'flex';
+            // Only show skeleton if no stale data to display
+            if (!hasStaleData) {
+              document.getElementById('contributions-skeleton').style.display = 'flex';
+              document.getElementById('contributions-content').style.display = 'none';
+            }
             document.getElementById('contributions-error').style.display = 'none';
-            document.getElementById('contributions-content').style.display = 'none';
 
             try {
               const response = await fetch(`${API_BASE}/api/contributions`);
               if (response.ok) {
                 const result = await response.json();
                 if (result.success && result.data && result.data.weeks) {
-                  // Add cache timestamp
+                  // Update cache
                   result.data.cachedAt = Date.now();
                   sessionStorage.setItem('contributions', JSON.stringify(result.data));
-                  renderContributions(result.data);
-                } else {
-                  throw new Error('Invalid data format');
+
+                  // Only re-render if data changed significantly
+                  if (!hasStaleData || JSON.stringify(result.data.weeks) !== JSON.stringify(JSON.parse(cached).weeks)) {
+                    renderContributions(result.data);
+                  }
                 }
-              } else {
-                throw new Error(`HTTP ${response.status}`);
               }
             } catch (err) {
               console.error('Failed to fetch contributions:', err);
-              showError();
+              // Don't show error if we have stale data
+              if (!hasStaleData) {
+                showError();
+              }
             }
           }
 
