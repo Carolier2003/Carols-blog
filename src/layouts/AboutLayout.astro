@@ -250,10 +250,26 @@ const { frontmatter } = Astro.props;
             const svg = document.getElementById('contrib-svg');
             svg.innerHTML = '';
 
-            // Month labels
-            months.forEach((month, i) => {
+            // Month labels - 根据实际周数据生成
+            const monthLabels = [];
+            let currentMonth = null;
+            data.weeks.forEach((week, weekIndex) => {
+              // 每周的星期四是该周的代表（用于月份标签）
+              const thursday = week[4];
+              if (thursday) {
+                const date = new Date(thursday.date);
+                const monthName = months[date.getMonth()];
+                if (monthName !== currentMonth) {
+                  monthLabels.push({ month: monthName, weekIndex });
+                  currentMonth = monthName;
+                }
+              }
+            });
+
+            // 渲染月份标签
+            monthLabels.forEach(({ month, weekIndex }) => {
               const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-              text.setAttribute('x', 15 + i * 4.35 * (cellSize + cellGap));
+              text.setAttribute('x', 15 + weekIndex * (cellSize + cellGap));
               text.setAttribute('y', 15);
               text.setAttribute('font-size', 10);
               text.setAttribute('fill', 'currentColor');
