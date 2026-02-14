@@ -1,8 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface Props {
   username: string;
 }
+
+// Get navigation count from global
+const getNavCount = () => {
+  if (typeof window !== 'undefined') {
+    return (window as any).__vtNavigationCount || 0;
+  }
+  return 0;
+};
 
 interface ContributionDay {
   date: string;
@@ -37,6 +45,8 @@ const API_BASE = import.meta.env.DEV
 
 // Simple SVG-based contribution heatmap component
 export default function GitHubContributions({ username }: Props) {
+  // Use navigation count as key to force remount on View Transitions
+  const [navKey, setNavKey] = useState(getNavCount());
   const [weeks, setWeeks] = useState<ContributionDay[][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,57 +65,58 @@ export default function GitHubContributions({ username }: Props) {
     gitcodeCount: 0,
   });
 
-  useEffect(() => {
-    const fetchContributions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchContributions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const response = await fetch(`${API_BASE}/api/contributions`);
+      const response = await fetch(`${API_BASE}/api/contributions`);
 
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to fetch contributions');
-        }
-
-        const data = result.data as ContributionResponse;
-
-        setWeeks(data.weeks);
-        setStats({
-          total: data.total,
-          github: data.githubTotal,
-          gitcode: data.gitcodeTotal,
-        });
-      } catch (err) {
-        console.error('Failed to fetch contributions:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        // 降级到模拟数据
-        setWeeks(generateMockData());
-        setStats({ total: 0, github: 0, gitcode: 0 });
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
-    };
 
-    // 初始加载
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch contributions');
+      }
+
+      const data = result.data as ContributionResponse;
+
+      setWeeks(data.weeks);
+      setStats({
+        total: data.total,
+        github: data.githubTotal,
+        gitcode: data.gitcodeTotal,
+      });
+    } catch (err) {
+      console.error('Failed to fetch contributions:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      // 降级到模拟数据
+      setWeeks(generateMockData());
+      setStats({ total: 0, github: 0, gitcode: 0 });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Initial load
     fetchContributions();
 
-    // View Transitions 后重新加载（Astro 页面导航）
-    const handlePageLoad = () => {
+    // Listen for View Transitions page load
+    const handleVtPageLoad = (e: CustomEvent) => {
+      setNavKey(e.detail.count);
       fetchContributions();
     };
 
-    document.addEventListener('astro:page-load', handlePageLoad);
+    document.addEventListener('vt:page-load', handleVtPageLoad as EventListener);
 
     return () => {
-      document.removeEventListener('astro:page-load', handlePageLoad);
+      document.removeEventListener('vt:page-load', handleVtPageLoad as EventListener);
     };
-  }, []);
+  }, [fetchContributions]);
 
   // Format date for display
   const formatDate = (dateStr: string): string => {
@@ -194,7 +205,9 @@ export default function GitHubContributions({ username }: Props) {
   const cellGap = 3;
 
   return (
-    <div className="github-contributions overflow-x-auto flex flex-col items-center relative">
+    <div key={navKey} className="github-contributions overflow-x-auto flex flex-col items-center relative">
+      {/* Hidden div to track VT navigation */}
+      <div data-vt-count={navKey} style={{ display: 'none' }} />
       {/* Stats summary */}
       <div className="flex items-center gap-4 mb-4 text-xs text-foreground/60">
         <span>

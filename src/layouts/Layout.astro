@@ -137,6 +137,20 @@ const structuredData = {
 
     <ClientRouter />
 
+    <!-- Global View Transitions handler for all components -->
+    <script is:inline>
+      // Global counter for forcing React component remount
+      window.__vtNavigationCount = 0;
+
+      document.addEventListener('astro:page-load', function() {
+        window.__vtNavigationCount++;
+        // Dispatch custom event for React components
+        document.dispatchEvent(new CustomEvent('vt:page-load', {
+          detail: { count: window.__vtNavigationCount }
+        }));
+      });
+    </script>
+
     <!-- Global View Transitions handler for ViewCounter and Comments -->
     <script is:inline>
       (function() {
@@ -271,6 +285,13 @@ const structuredData = {
 
         // Run after View Transitions
         document.addEventListener("astro:page-load", initComponents);
+
+        // Also run on initial load
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initComponents);
+        } else {
+          initComponents();
+        }
       })();
     </script>
 
