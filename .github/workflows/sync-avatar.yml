@@ -1,0 +1,37 @@
+name: Sync GitHub Avatar
+
+on:
+  schedule:
+    # 每天凌晨 3 点运行
+    - cron: '0 3 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  sync-avatar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download avatar from GitHub
+        run: |
+          curl -sL -o public/avatar.png "https://github.com/Carolier2003.png?size=200"
+          file public/avatar.png
+
+      - name: Check if avatar changed
+        id: check
+        run: |
+          if git diff --quiet public/avatar.png; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push if changed
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add public/avatar.png
+          git commit -m "chore: sync avatar from GitHub"
+          git push
