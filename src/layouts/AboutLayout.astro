@@ -323,6 +323,7 @@ const { frontmatter } = Astro.props;
             });
 
             // Contribution cells
+            const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
             data.weeks.forEach((week, weekIndex) => {
               week.forEach((day, dayIndex) => {
                 const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -331,7 +332,7 @@ const { frontmatter } = Astro.props;
                 rect.setAttribute('width', cellSize);
                 rect.setAttribute('height', cellSize);
                 rect.setAttribute('rx', 2);
-                rect.setAttribute('fill', getColor(day.level, false));
+                rect.setAttribute('fill', getColor(day.level, isDarkMode));
                 rect.setAttribute('class', 'contrib-cell');
                 rect.setAttribute('data-level', day.level);
 
@@ -456,16 +457,16 @@ const { frontmatter } = Astro.props;
           // Also fetch on View Transitions
           document.addEventListener('astro:page-load', fetchContributions);
 
-          // Listen for theme changes and update legend
+          // Listen for theme changes and re-render heatmap
           const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
               if (mutation.attributeName === 'data-theme') {
-                // Re-render legend with new theme
+                // Re-render entire heatmap with new theme colors
                 const cached = sessionStorage.getItem('contributions');
                 if (cached) {
                   try {
                     const data = JSON.parse(cached);
-                    renderLegend();
+                    renderContributions(data);
                   } catch (e) {}
                 }
               }
