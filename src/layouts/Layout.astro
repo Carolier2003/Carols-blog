@@ -172,5 +172,149 @@ const structuredData = {
 
     <!-- Load full theme logic -->
     <script src="../scripts/theme.ts"></script>
+
+    <!-- Global View Transitions handler for ViewCounter and Comments -->
+    <script is:inline>
+      (function() {
+        const VIEW_API_BASE = "https://api.kon-carol.xyz";
+
+        function formatCount(num) {
+          if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+          if (num >= 1000) return (num / 1000).toFixed(1) + "k";
+          return num.toString();
+        }
+
+        function getCachedViews() {
+          try {
+            const cached = sessionStorage.getItem("viewCounts");
+            const timestamp = sessionStorage.getItem("viewCountsTimestamp");
+            if (cached && timestamp && Date.now() - parseInt(timestamp) < 300000) {
+              return JSON.parse(cached);
+            }
+          } catch (e) {}
+          return {};
+        }
+
+        function setCachedViews(views) {
+          try {
+            sessionStorage.setItem("viewCounts", JSON.stringify(views));
+            sessionStorage.setItem("viewCountsTimestamp", Date.now().toString());
+          } catch (e) {}
+        }
+
+        async function fetchViewCounts() {
+          const counters = document.querySelectorAll(".view-counter");
+          const slugs = [];
+          const slugToElements = new Map();
+
+          counters.forEach((el) => {
+            const slug = el.dataset.slug;
+            if (slug) {
+              slugs.push(slug);
+              if (!slugToElements.has(slug)) {
+                slugToElements.set(slug, []);
+              }
+              slugToElements.get(slug).push(el);
+            }
+          });
+
+          if (slugs.length === 0) return;
+
+          const uniqueSlugs = [...new Set(slugs)];
+          const cachedViews = getCachedViews();
+          const slugsToFetch = [];
+          const result = { ...cachedViews };
+
+          uniqueSlugs.forEach((slug) => {
+            if (cachedViews[slug] === undefined) {
+              slugsToFetch.push(slug);
+            }
+          });
+
+          if (slugsToFetch.length > 0) {
+            try {
+              const slugsParam = slugsToFetch.join(",");
+              const response = await fetch(
+                `${VIEW_API_BASE}/api/views/batch?slugs=${encodeURIComponent(slugsParam)}`
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success && typeof data.views === "object") {
+                  Object.assign(result, data.views);
+                  Object.assign(cachedViews, data.views);
+                  setCachedViews(cachedViews);
+                }
+              }
+            } catch (error) {}
+          }
+
+          uniqueSlugs.forEach((slug) => {
+            const elements = slugToElements.get(slug);
+            const count = result[slug] ?? 0;
+            elements?.forEach((el) => {
+              const countEl = el.querySelector(".count");
+              if (countEl) {
+                countEl.textContent = formatCount(count);
+              }
+            });
+          });
+        }
+
+        function cleanupGiscus() {
+          const existingIframe = document.querySelector('iframe.giscus-frame');
+          if (existingIframe) existingIframe.remove();
+          const existingScript = document.querySelector('script[data-giscus]');
+          if (existingScript) existingScript.remove();
+          const container = document.getElementById("giscus-container");
+          if (container) container.innerHTML = "";
+        }
+
+        function loadGiscus() {
+          const container = document.getElementById("giscus-container");
+          if (!container) return;
+
+          cleanupGiscus();
+
+          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          const baseUrl = "https://blog.kon-carol.xyz";
+          const theme = isDark ? `${baseUrl}/giscus-dark.css` : `${baseUrl}/giscus-light.css`;
+
+          const script = document.createElement("script");
+          script.src = "https://giscus.app/client.js";
+          script.setAttribute("data-repo", "Carolier2003/Carols-blog");
+          script.setAttribute("data-repo-id", "R_kgDOROT-5Q");
+          script.setAttribute("data-category", "Announcements");
+          script.setAttribute("data-category-id", "DIC_kwDOROT-5c4C2R8n");
+          script.setAttribute("data-mapping", "pathname");
+          script.setAttribute("data-strict", "0");
+          script.setAttribute("data-reactions-enabled", "1");
+          script.setAttribute("data-emit-metadata", "0");
+          script.setAttribute("data-input-position", "bottom");
+          script.setAttribute("data-theme", theme);
+          script.setAttribute("data-lang", "zh-CN");
+          script.setAttribute("crossorigin", "anonymous");
+          script.setAttribute("data-giscus", "true");
+          script.async = true;
+
+          container.appendChild(script);
+        }
+
+        function initComponents() {
+          fetchViewCounts();
+          loadGiscus();
+        }
+
+        // Run on initial load
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initComponents);
+        } else {
+          initComponents();
+        }
+
+        // Run after View Transitions
+        document.addEventListener("astro:page-load", initComponents);
+      })();
+    </script>
   </body>
 </html>
