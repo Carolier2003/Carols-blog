@@ -1,0 +1,344 @@
+---
+// Generate fake contribution data for the heatmap
+// In the future, this could be replaced with real data from GitHub API or blog stats
+
+const weeks = 52;
+const daysPerWeek = 7;
+
+// Generate random contribution data
+const generateData = () => {
+  const data = [];
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - (weeks * 7));
+
+  for (let week = 0; week < weeks; week++) {
+    const weekData = [];
+    for (let day = 0; day < daysPerWeek; day++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + (week * 7) + day);
+
+      // Random contribution level: 0-4
+      // 0 = no contribution, 4 = high contribution
+      const level = Math.random() > 0.6 ? Math.floor(Math.random() * 4) + 1 : 0;
+
+      weekData.push({
+        date: date.toISOString().split('T')[0],
+        level,
+        count: level * Math.floor(Math.random() * 3 + 1)
+      });
+    }
+    data.push(weekData);
+  }
+  return data;
+};
+
+const data = generateData();
+
+// Calculate total contributions
+const totalContributions = data.flat().reduce((sum, day) => sum + day.count, 0);
+
+// Calculate month labels based on actual data
+// Find the first day of each month in the data
+const monthLabels: { month: string; weekIndex: number }[] = [];
+const seenMonths = new Set<number>();
+
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+data.forEach((week, weekIndex) => {
+  // Check the first day of the week
+  const firstDay = week[0];
+  const date = new Date(firstDay.date);
+  const month = date.getMonth();
+
+  if (!seenMonths.has(month)) {
+    seenMonths.add(month);
+    monthLabels.push({
+      month: monthNames[month],
+      weekIndex
+    });
+  }
+});
+---
+
+<div class="contribution-heatmap">
+  <div class="heatmap-container overflow-x-auto">
+    <div class="heatmap-grid">
+      <!-- Month labels - positioned above first week of each month -->
+      <div class="heatmap-months">
+        {monthLabels.map((label, index) => {
+          const isFirst = index === 0;
+          const isLast = index === monthLabels.length - 1;
+          return (
+            <span
+              class={`month-label ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}`}
+              style={`left: ${label.weekIndex * (0.75 + 0.25)}rem`}
+            >
+              {label.month}
+            </span>
+          );
+        })}
+      </div>
+
+      <!-- Heatmap squares -->
+      <div class="heatmap-squares">
+        {data.map((week, weekIndex) => (
+          <div class="heatmap-week">
+            {week.map((day, dayIndex) => (
+              <div
+                class={`heatmap-day level-${day.level}`}
+                title={`${day.date}: ${day.count} contributions`}
+                data-date={day.date}
+                data-count={day.count}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend - moved outside scroll container -->
+  <div class="heatmap-legend">
+    <span class="text-xs text-foreground/50">Less</span>
+    <div class="legend-squares">
+      <div class="legend-square level-0" />
+      <div class="legend-square level-1" />
+      <div class="legend-square level-2" />
+      <div class="legend-square level-3" />
+      <div class="legend-square level-4" />
+    </div>
+    <span class="text-xs text-foreground/50">More</span>
+  </div>
+</div>
+
+<style>
+  .contribution-heatmap {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .heatmap-container {
+    padding-bottom: 1.5rem;
+    scrollbar-gutter: stable;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Custom scrollbar styling */
+  .heatmap-container::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .heatmap-container::-webkit-scrollbar-track {
+    background: transparent;
+    margin-top: 4px;
+  }
+
+  .heatmap-container::-webkit-scrollbar-thumb {
+    background: var(--foreground);
+    opacity: 0.15;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .heatmap-container::-webkit-scrollbar-thumb:hover {
+    opacity: 0.3;
+  }
+
+  .heatmap-grid {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: max-content;
+  }
+
+  .heatmap-months {
+    position: relative;
+    height: 1rem;
+    font-size: 0.75rem;
+    color: var(--foreground);
+    opacity: 0.5;
+    margin-bottom: 0.25rem;
+    padding-left: 28px;
+    padding-right: 4px;
+  }
+
+  .month-label {
+    position: absolute;
+    white-space: nowrap;
+    transform: translateX(-30%);
+  }
+
+  .month-label.first {
+    transform: translateX(0);
+  }
+
+  .month-label.last {
+    transform: translateX(-70%);
+  }
+
+  .heatmap-squares {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .heatmap-week {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .heatmap-day {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 0.125rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .heatmap-day:hover {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    opacity: 0.5;
+  }
+
+  /* Level colors - match blog theme accent */
+  /* Light theme: blue (#006cac), Dark theme: orange (#ff6b01) */
+
+  .level-0 {
+    background: var(--foreground);
+    opacity: 0.1;
+  }
+
+  /* Level 1 - Light */
+  .level-1 {
+    background: rgba(0, 108, 172, 0.3);
+  }
+
+  :global([data-theme="dark"]) .level-1 {
+    background: rgba(255, 107, 1, 0.3);
+  }
+
+  /* Level 2 - Light */
+  .level-2 {
+    background: rgba(0, 108, 172, 0.5);
+  }
+
+  :global([data-theme="dark"]) .level-2 {
+    background: rgba(255, 107, 1, 0.5);
+  }
+
+  /* Level 3 - Light */
+  .level-3 {
+    background: rgba(0, 108, 172, 0.75);
+  }
+
+  :global([data-theme="dark"]) .level-3 {
+    background: rgba(255, 107, 1, 0.75);
+  }
+
+  /* Level 4 - Light (full intensity) */
+  .level-4 {
+    background: rgb(0, 108, 172);
+  }
+
+  :global([data-theme="dark"]) .level-4 {
+    background: rgb(255, 107, 1);
+  }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .legend-squares {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .legend-square {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 0.125rem;
+  }
+</style>
+
+<script>
+  // Add tooltip functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const days = document.querySelectorAll('.heatmap-day');
+
+    // Create tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.className = 'heatmap-tooltip';
+    tooltip.style.cssText = `
+      position: absolute;
+      background: var(--background, #fff);
+      border: 1px solid var(--border, #e1e4e8);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--foreground, #24292e);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      pointer-events: none;
+      z-index: 1000;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    `;
+    document.body.appendChild(tooltip);
+
+    days.forEach(day => {
+      day.addEventListener('mouseenter', (e) => {
+        const date = e.target.dataset.date;
+        const count = parseInt(e.target.dataset.count, 10);
+
+        // Format date: "Feb 14, 2026"
+        const dateObj = new Date(date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        // Format contribution text
+        const contributionText = count === 0 ? 'No contributions' :
+                                 count === 1 ? '1 contribution' :
+                                 `${count} contributions`;
+
+        tooltip.innerHTML = `<strong>${contributionText}</strong><br/><span style="opacity:0.7">${formattedDate}</span>`;
+        tooltip.style.opacity = '1';
+      });
+
+      day.addEventListener('mousemove', (e) => {
+        // Position tooltip above the cursor
+        const x = e.pageX;
+        const y = e.pageY - 10;
+
+        // Adjust if tooltip would go off screen
+        const rect = tooltip.getBoundingClientRect();
+        let left = x - rect.width / 2;
+        let top = y - rect.height;
+
+        if (left < 10) left = 10;
+        if (left + rect.width > window.innerWidth - 10) {
+          left = window.innerWidth - rect.width - 10;
+        }
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+      });
+
+      day.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+      });
+    });
+  });
+</script>
