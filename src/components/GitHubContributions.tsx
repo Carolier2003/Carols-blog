@@ -92,7 +92,19 @@ export default function GitHubContributions({ username }: Props) {
       }
     };
 
+    // 初始加载
     fetchContributions();
+
+    // View Transitions 后重新加载（Astro 页面导航）
+    const handlePageLoad = () => {
+      fetchContributions();
+    };
+
+    document.addEventListener('astro:page-load', handlePageLoad);
+
+    return () => {
+      document.removeEventListener('astro:page-load', handlePageLoad);
+    };
   }, []);
 
   // Format date for display
