@@ -1,19 +1,16 @@
 <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <title>Carol's Blog</title>
-  <desc>Backend architecture icon with data stack</desc>
-  <g fill="none" stroke="#006cac" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Hexagon frame -->
-    <path d="M32 4l24 14v28l-24 14-24-14v-28z" />
-    <!-- Power/connection symbol at top -->
-    <path d="M32 14v6 M29 17l3 3 3-3" stroke-width="2.5"/>
-    <!-- Data stack layers -->
-    <rect x="20" y="25" width="24" height="5" rx="1" />
-    <rect x="20" y="35" width="24" height="5" rx="1" />
-    <rect x="20" y="45" width="24" height="5" rx="1" />
-  </g>
+  <desc>Backend engineer logo with code braces</desc>
   <style>
+    .bg { fill: #111827; }
+    .letter { fill: #ffffff; }
+    .braces { fill: #60a5fa; }
     @media (prefers-color-scheme: dark) {
-      g { stroke: #ff6b01; }
+      .bg { fill: #1f2937; }
+      .braces { fill: #ff6b01; }
     }
   </style>
+  <rect width="64" height="64" rx="14" class="bg"/>
+  <text x="16" y="42" font-size="28" class="letter" font-family="monospace">C</text>
+  <text x="30" y="42" font-size="26" class="braces" font-family="monospace">{}</text>
 </svg>
