@@ -180,7 +180,13 @@ const { frontmatter } = Astro.props;
 
           function getColor(level, isDark) {
             if (level === 0) return isDark ? '#2d333b' : '#ebedf0';
-            const colors = ['',
+            // 深色模式使用橙色，浅色模式使用蓝色
+            const colors = isDark ? ['',
+              'rgba(255, 107, 1, 0.3)',
+              'rgba(255, 107, 1, 0.5)',
+              'rgba(255, 107, 1, 0.75)',
+              'rgb(255, 107, 1)'
+            ] : ['',
               'rgba(0, 108, 172, 0.3)',
               'rgba(0, 108, 172, 0.5)',
               'rgba(0, 108, 172, 0.75)',
