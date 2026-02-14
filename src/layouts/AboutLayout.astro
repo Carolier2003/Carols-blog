@@ -253,21 +253,37 @@ const { frontmatter } = Astro.props;
             // Month labels - 根据实际周数据生成
             const monthLabels = [];
             let currentMonth = null;
+            let currentYear = null;
             data.weeks.forEach((week, weekIndex) => {
               // 每周的星期四是该周的代表（用于月份标签）
               const thursday = week[4];
               if (thursday) {
                 const date = new Date(thursday.date);
                 const monthName = months[date.getMonth()];
-                if (monthName !== currentMonth) {
-                  monthLabels.push({ month: monthName, weekIndex });
-                  currentMonth = monthName;
+                const year = date.getFullYear();
+                const monthYear = `${monthName}-${year}`;
+
+                if (monthYear !== currentMonth) {
+                  // 如果是同月份但不同年份，显示缩写年份（如 Feb '26）
+                  const displayMonth = monthName === currentMonth?.split('-')[0]
+                    ? `${monthName} '${year.toString().slice(2)}`
+                    : monthName;
+
+                  monthLabels.push({ month: displayMonth, weekIndex });
+                  currentMonth = monthYear;
                 }
               }
             });
 
-            // 渲染月份标签
-            monthLabels.forEach(({ month, weekIndex }) => {
+            // 渲染月份标签，过滤掉距离太近的（间隔小于3周）
+            const minGap = 3;
+            const filteredLabels = monthLabels.filter((label, index) => {
+              if (index === 0) return true;
+              const prevLabel = monthLabels[index - 1];
+              return label.weekIndex - prevLabel.weekIndex >= minGap;
+            });
+
+            filteredLabels.forEach(({ month, weekIndex }) => {
               const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
               text.setAttribute('x', 15 + weekIndex * (cellSize + cellGap));
               text.setAttribute('y', 15);
