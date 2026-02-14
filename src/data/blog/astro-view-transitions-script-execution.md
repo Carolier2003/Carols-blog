@@ -1,9 +1,10 @@
 ---
 title: "解决 Astro View Transitions 导致的脚本不执行问题"
 pubDatetime: 2026-02-14T10:00:00+08:00
-description: "记录一次从主页跳转到博文详情页时，浏览量计数器和 Giscus 评论无法加载的完整排查过程，从现象到原理，从失败到成功。"
-tags: ["Astro", "View Transitions", "JavaScript", "前端开发"]
-featured: false
+modDatetime: 2026-02-14T19:00:00+08:00
+description: "记录从主页跳转到博文详情页时浏览量计数器、Giscus 评论、贡献热力图无法加载的完整排查过程。涵盖全局方案和局部方案两种解决思路，以及 Skeleton 骨架屏和缓存策略的最佳实践。"
+tags: ["Astro", "View Transitions", "JavaScript", "前端开发", "性能优化"]
+featured: true
 ---
 
 ## 问题现象
@@ -345,6 +346,157 @@ const { slug } = Astro.props;
 </div>
 ```
 
+## 新案例：贡献热力图的另一种方案
+
+在实现 GitHub 贡献热力图时，我遇到了类似的问题，但采用了不同的解决方案。
+
+### 热力图的特殊需求
+
+与 ViewCounter 不同，热力图只在 About 页面使用，不需要全局管理。但它有更复杂的交互需求：
+- 鼠标悬停显示 Tooltip
+- 52×7 的 SVG 网格需要动态生成
+- 从 API 获取一年的贡献数据
+
+### 局部方案：`<script is:inline>` + 页面级缓存
+
+如果组件只在特定页面使用，不必放在全局 Layout 中。可以在页面或组件内解决：
+
+```astro
+---
+// AboutLayout.astro
+---
+
+<!-- 骨架屏 -->
+<div id="contributions-skeleton">
+  <div class="skeleton-grid">
+    {Array.from({ length: 52 }).map(() => (
+      <div class="skeleton-week">
+        {Array.from({ length: 7 }).map(() => (
+          <div class="skeleton-cell" />
+        ))}
+      </div>
+    ))}
+  </div>
+</div>
+
+<!-- 真实内容 -->
+<div id="contributions-content" style="display: none;">
+  <svg id="contrib-svg"><!-- 动态生成 --></svg>
+</div>
+
+<!-- Tooltip -->
+<div id="contrib-tooltip" class="contrib-tooltip" />
+
+<script is:inline>
+  (function() {
+    const API_BASE = location.hostname === 'localhost'
+      ? 'http://localhost:8787'
+      : 'https://api.kon-carol.xyz';
+
+    // 检查缓存（5分钟TTL）
+    function getCachedData() {
+      const cached = sessionStorage.getItem('contributions');
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (Date.now() - data.cachedAt < 5 * 60 * 1000) {
+          return data;
+        }
+      }
+      return null;
+    }
+
+    function renderContributions(data) {
+      // 隐藏骨架屏，显示内容
+      document.getElementById('contributions-skeleton').style.display = 'none';
+      document.getElementById('contributions-content').style.display = 'flex';
+
+      // 生成 SVG 热力图...
+    }
+
+    async function fetchContributions() {
+      // 先检查缓存
+      const cached = getCachedData();
+      if (cached) {
+        renderContributions(cached);
+        return;
+      }
+
+      // 显示骨架屏
+      document.getElementById('contributions-skeleton').style.display = 'flex';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/contributions`);
+        const result = await response.json();
+
+        if (result.success) {
+          // 存入缓存
+          result.data.cachedAt = Date.now();
+          sessionStorage.setItem('contributions', JSON.stringify(result.data));
+          renderContributions(result.data);
+        }
+      } catch (err) {
+        console.error('Failed to load:', err);
+      }
+    }
+
+    // 首次加载
+    fetchContributions();
+
+    // View Transitions 后重新加载
+    document.addEventListener('astro:page-load', fetchContributions);
+  })();
+</script>
+```
+
+### 关键区别
+
+| 特性 | 全局方案（Layout.astro） | 局部方案（页面内） |
+|------|------------------------|------------------|
+| 适用场景 | 多页面共享的组件（导航、计数器） | 单页面特有功能（热力图） |
+| 脚本位置 | `<head>` | `<body>`（使用 `is:inline`）|
+| 状态管理 | 全局变量 | sessionStorage 缓存 |
+| 代码组织 | 集中管理 | 就近放置，易于维护 |
+
+### 为什么局部方案也有效？
+
+仔细看，局部方案的脚本也在 `<body>` 中，View Transitions 后它不应该被执行了吗？
+
+**关键点**：`is:inline`
+
+- **普通 `<script>`**：Astro 会打包处理，View Transitions 后可能不被重新执行
+- **`<script is:inline>`**：原样保留在 HTML 中，View Transitions 替换 `<body>` 时，新页面的内联脚本会被执行
+
+配合 `astro:page-load` 事件，确保每次导航后都能初始化。
+
+### 缓存策略的选择
+
+热力图数据一天更新一次，不需要每次都请求：
+
+```javascript
+// sessionStorage - 标签页关闭即清理，适合短期缓存
+sessionStorage.setItem('key', JSON.stringify(data));
+
+// localStorage - 永久存储，适合主题设置等
+localStorage.setItem('key', JSON.stringify(data));
+
+// 内存缓存 - 页面刷新即丢失
+window.__cache = data;
+```
+
+对于贡献数据，我用 `sessionStorage` + 5分钟 TTL：
+- 用户在同一会话内多次访问 About 页面，直接用缓存
+- 新开标签页或关闭重开会重新获取（避免数据过旧）
+- 比 API 调用快，比 localStorage 干净
+
+## 两种方案如何选择？
+
+| 场景 | 推荐方案 | 原因 |
+|------|---------|------|
+| 导航栏、全局计数器、评论 | 全局 `<head>` 方案 | 所有页面共享，避免重复注册 |
+| 页面特有的图表、交互组件 | 局部 `is:inline` 方案 | 代码内聚，易于理解和维护 |
+| 需要复杂状态管理 | 全局方案 + 全局变量 | 跨页面保持状态 |
+| 数据需要缓存 | 局部方案 + Storage | 独立管理生命周期 |
+
 ## 经验总结
 
 ### 排查思路
@@ -363,6 +515,59 @@ const { slug } = Astro.props;
 - **`<head>` 和 `<body>` 有本质区别**，不是所有脚本都适合放在 body 中
 - **文档 vs 现实**：官方文档是理想情况，实际使用时要做好 fallback，尤其是在特定版本可能存在 bug 时
 - **全局状态 vs 局部状态**：需要跨页面保持的逻辑（如事件监听器）应该放在全局（`<head>`）
+
+### Skeleton 骨架屏：提升等待体验
+
+当数据需要异步加载时，骨架屏比传统的 Loading 动画更好的原因是：
+
+1. **减少布局偏移** - 提前占位，内容加载后不会推动其他元素
+2. **感知性能** - 用户立即看到内容结构，感觉加载更快
+3. **减少焦虑** - 空白屏幕让用户怀疑是否出错，骨架屏提供即时反馈
+
+**实现要点**：
+
+```astro
+<!-- 骨架屏：默认显示 -->
+<div id="skeleton" class="skeleton-container">
+  <div class="skeleton-header" />
+  <div class="skeleton-grid">
+    {Array.from({ length: 52 }).map(() => (
+      <div class="skeleton-cell" />
+    ))}
+  </div>
+</div>
+
+<!-- 真实内容：默认隐藏 -->
+<div id="content" style="display: none;">
+  <!-- 动态生成的内容 -->
+</div>
+
+<script is:inline>
+  async function loadData() {
+    // 骨架屏已显示，直接请求数据
+    const data = await fetch('/api/data').then(r => r.json());
+
+    // 渲染完成后切换显示
+    document.getElementById('skeleton').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  }
+</script>
+```
+
+**CSS 动画**：
+
+```css
+.skeleton-cell {
+  background: var(--foreground);
+  opacity: 0.1;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.2; }
+}
+```
 
 ### 最佳实践
 
@@ -392,6 +597,14 @@ const { slug } = Astro.props;
   </script>
 </head>
 ```
+
+**检查清单**：
+
+- [ ] 使用 `is:inline` 确保脚本内联到 HTML
+- [ ] 添加骨架屏提升等待体验
+- [ ] 使用 sessionStorage/localStorage 缓存数据减少请求
+- [ ] 全局组件用 `<head>` 方案，局部组件用 `is:inline` 方案
+- [ ] 测试「直接访问」和「View Transitions 导航」两种场景
 
 ## 参考资源
 
