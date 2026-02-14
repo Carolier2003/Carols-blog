@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Props {
   username: string;
@@ -11,6 +11,9 @@ const getNavCount = () => {
   }
   return 0;
 };
+
+// Track last processed navigation count across renders
+let lastProcessedNavCount = -1;
 
 interface ContributionDay {
   date: string;
@@ -65,7 +68,10 @@ export default function GitHubContributions({ username }: Props) {
     gitcodeCount: 0,
   });
 
-  const fetchContributions = useCallback(async () => {
+  const fetchContributions = useCallback(async (force = false) => {
+    // Prevent duplicate fetches unless forced
+    if (!force && weeks.length > 0) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -99,36 +105,33 @@ export default function GitHubContributions({ username }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [weeks.length]);
 
+  // Handle initial load and View Transitions
   useEffect(() => {
-    // Initial load
-    fetchContributions();
+    const currentNavCount = getNavCount();
+
+    // Always fetch on first mount or if nav count changed
+    if (lastProcessedNavCount !== currentNavCount) {
+      lastProcessedNavCount = currentNavCount;
+      setNavKey(currentNavCount);
+      fetchContributions(true);
+    }
 
     // Listen for View Transitions page load
     const handleVtPageLoad = (e: CustomEvent) => {
-      setNavKey(e.detail.count);
-      fetchContributions();
+      const newCount = e.detail.count;
+      if (lastProcessedNavCount !== newCount) {
+        lastProcessedNavCount = newCount;
+        setNavKey(newCount);
+        fetchContributions(true);
+      }
     };
 
     document.addEventListener('vt:page-load', handleVtPageLoad as EventListener);
 
     return () => {
       document.removeEventListener('vt:page-load', handleVtPageLoad as EventListener);
-    };
-  }, [fetchContributions]);
-
-  // Also listen to astro:page-load for compatibility
-  useEffect(() => {
-    const handleAstroPageLoad = () => {
-      const newCount = (window as any).__vtNavigationCount || 0;
-      setNavKey(newCount);
-      fetchContributions();
-    };
-
-    document.addEventListener('astro:page-load', handleAstroPageLoad);
-    return () => {
-      document.removeEventListener('astro:page-load', handleAstroPageLoad);
     };
   }, [fetchContributions]);
 
