@@ -12,8 +12,8 @@ const getNavCount = () => {
   return 0;
 };
 
-// Track last processed navigation count across renders
-let lastProcessedNavCount = -1;
+// Track processed navigation counts per component instance
+const processedNavCounts = new Set<number>();
 
 interface ContributionDay {
   date: string;
@@ -111,20 +111,59 @@ export default function GitHubContributions({ username }: Props) {
   useEffect(() => {
     const currentNavCount = getNavCount();
 
-    // Always fetch on first mount or if nav count changed
-    if (lastProcessedNavCount !== currentNavCount) {
-      lastProcessedNavCount = currentNavCount;
+    // Always fetch on mount for this nav count (prevents duplicate fetches for same VT)
+    if (!processedNavCounts.has(currentNavCount)) {
+      processedNavCounts.add(currentNavCount);
       setNavKey(currentNavCount);
-      fetchContributions(true);
+      // Direct fetch without condition
+      fetch(`${API_BASE}/api/contributions`)
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            const data = result.data as ContributionResponse;
+            setWeeks(data.weeks);
+            setStats({
+              total: data.total,
+              github: data.githubTotal,
+              gitcode: data.gitcodeTotal,
+            });
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Failed to fetch contributions:', err);
+          setError(err.message);
+          setWeeks(generateMockData());
+          setLoading(false);
+        });
     }
 
     // Listen for View Transitions page load
     const handleVtPageLoad = (e: CustomEvent) => {
       const newCount = e.detail.count;
-      if (lastProcessedNavCount !== newCount) {
-        lastProcessedNavCount = newCount;
+      if (!processedNavCounts.has(newCount)) {
+        processedNavCounts.add(newCount);
         setNavKey(newCount);
-        fetchContributions(true);
+        fetch(`${API_BASE}/api/contributions`)
+          .then(r => r.json())
+          .then(result => {
+            if (result.success) {
+              const data = result.data as ContributionResponse;
+              setWeeks(data.weeks);
+              setStats({
+                total: data.total,
+                github: data.githubTotal,
+                gitcode: data.gitcodeTotal,
+              });
+            }
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error('Failed to fetch contributions:', err);
+            setError(err.message);
+            setWeeks(generateMockData());
+            setLoading(false);
+          });
       }
     };
 
@@ -133,7 +172,7 @@ export default function GitHubContributions({ username }: Props) {
     return () => {
       document.removeEventListener('vt:page-load', handleVtPageLoad as EventListener);
     };
-  }, [fetchContributions]);
+  }, []);
 
   // Format date for display
   const formatDate = (dateStr: string): string => {
