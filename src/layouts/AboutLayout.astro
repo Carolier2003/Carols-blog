@@ -287,6 +287,21 @@ const { frontmatter } = Astro.props;
           }
 
           async function fetchContributions() {
+            // Check cache first
+            const cached = sessionStorage.getItem('contributions');
+            if (cached) {
+              try {
+                const data = JSON.parse(cached);
+                // Validate cache is not too old (5 minutes)
+                if (data.cachedAt && Date.now() - data.cachedAt < 5 * 60 * 1000) {
+                  renderContributions(data);
+                  return;
+                }
+              } catch (e) {
+                // Invalid cache, continue to fetch
+              }
+            }
+
             // Show skeleton, hide error
             document.getElementById('contributions-skeleton').style.display = 'flex';
             document.getElementById('contributions-error').style.display = 'none';
@@ -297,6 +312,9 @@ const { frontmatter } = Astro.props;
               if (response.ok) {
                 const result = await response.json();
                 if (result.success && result.data && result.data.weeks) {
+                  // Add cache timestamp
+                  result.data.cachedAt = Date.now();
+                  sessionStorage.setItem('contributions', JSON.stringify(result.data));
                   renderContributions(result.data);
                 } else {
                   throw new Error('Invalid data format');
