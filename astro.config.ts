@@ -11,6 +11,8 @@ import {
 import { transformerFileName } from "./src/utils/transformers/fileName";
 import { SITE } from "./src/config";
 
+import react from "@astrojs/react";
+
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
@@ -35,11 +37,9 @@ export default defineConfig({
     // Spring MVC
     "/2025/07/04/spring-mvc": "/posts/spring-mvc",
   },
-  integrations: [
-    sitemap({
-      filter: page => SITE.showArchives || !page.endsWith("/archives"),
-    }),
-  ],
+  integrations: [sitemap({
+    filter: page => SITE.showArchives || !page.endsWith("/archives"),
+  }), react()],
   markdown: {
     remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
     shikiConfig: {
