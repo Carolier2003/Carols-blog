@@ -81,55 +81,95 @@ document.addEventListener("astro:page-load", loadGiscus);
 
 `data-astro-rerun` 属性告诉 Astro：「这个脚本很重要，每次页面过渡后都需要重新执行」。
 
-## 修改后的代码
+## 实际遇到的问题
 
-### ViewCounter.astro
+按照官方文档添加 `data-astro-rerun` 后，我发现了一个更深层的问题：**Astro v5.16.6 的 View Transitions 存在 bug**——`<body>` 中的 `data-astro-rerun` 脚本在页面过渡后会被移除且不会重新执行。
+
+这意味着官方推荐的方案在这个版本中实际上不工作。
+
+## 最终的解决方案
+
+经过反复测试，我发现了一个可靠的解决方案：**将初始化逻辑移到 `<head>` 中，使用 `astro:page-load` 事件**。
+
+### Layout.astro
 
 ```astro
+<head>
+  <ClientRouter />
+
+  <!-- 全局 View Transitions 处理器 -->
+  <script is:inline>
+    (function() {
+      const VIEW_API_BASE = "https://api.kon-carol.xyz";
+
+      function formatCount(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+        if (num >= 1000) return (num / 1000).toFixed(1) + "k";
+        return num.toString();
+      }
+
+      async function fetchViewCounts() {
+        const counters = document.querySelectorAll(".view-counter");
+        // ... 获取并更新浏览量
+      }
+
+      function cleanupGiscus() {
+        const existingIframe = document.querySelector('iframe.giscus-frame');
+        if (existingIframe) existingIframe.remove();
+        // ...
+      }
+
+      function loadGiscus() {
+        const container = document.getElementById("giscus-container");
+        if (!container) return;
+        cleanupGiscus();
+        // ... 创建并插入 giscus 脚本
+      }
+
+      function initComponents() {
+        fetchViewCounts();
+        loadGiscus();
+      }
+
+      // 在 View Transitions 页面加载完成后执行
+      document.addEventListener("astro:page-load", initComponents);
+    })();
+  </script>
+</head>
+```
+
+### 为什么这个方案有效？
+
+关键在于 **`<head>` 中的脚本不会被 View Transitions 替换**：
+
+1. Astro View Transitions 只替换 `<body>` 的内容
+2. `<head>` 中的脚本（包括事件监听器）在页面过渡过程中保持不变
+3. 因此 `astro:page-load` 事件监听器会在每次页面加载后持续触发
+
+这与在 `<body>` 中放置脚本有本质区别——`<body>` 中的脚本在 View Transitions 后会被完全替换，导致事件监听器丢失。
+
+## 修改后的代码
+
+### ViewCounter.astro（保留 data-astro-rerun 作为备用）
+
+```astro
+<span class="view-counter" data-slug={slug}>
+  <span class="count">--</span>
+</span>
+
 <script is:inline data-astro-rerun>
-  const VIEW_API_BASE = "https://api.kon-carol.xyz";
-
-  function formatCount(num) {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-    if (num >= 1000) return (num / 1000).toFixed(1) + "k";
-    return num.toString();
-  }
-
-  function initViewCounter() {
-    // 每次执行时都重新查询 DOM，确保获取到当前页面的所有计数器
-    const counters = document.querySelectorAll(".view-counter");
-    // ... 初始化逻辑
-    fetchViewCounts();
-  }
-
-  // 每次页面加载或过渡后都会执行
-  initViewCounter();
+  // 这个脚本在 View Transitions 后可能不执行（取决于 Astro 版本）
+  // 因此主要逻辑移到 Layout.astro 的 astro:page-load 事件中
+  console.debug("ViewCounter script executed");
 </script>
 ```
 
 ### Comments.astro
 
 ```astro
-<script is:inline data-astro-rerun>
-  (function() {
-    const baseUrl = "https://blog.kon-carol.xyz";
-
-    function cleanupGiscus() {
-      // 清理旧的 giscus iframe，避免重复渲染
-      const existingIframe = document.querySelector('iframe.giscus-frame');
-      if (existingIframe) existingIframe.remove();
-      // ...
-    }
-
-    function loadGiscus() {
-      cleanupGiscus();
-      // 加载新的 giscus 脚本...
-    }
-
-    // 每次页面加载或过渡后都会执行
-    loadGiscus();
-  })();
-</script>
+<div class="giscus-container" id="giscus-container">
+  <!-- Giscus 脚本将通过 Layout.astro 中的 astro:page-load 事件注入 -->
+</div>
 ```
 
 ## 关键区别对比
@@ -197,9 +237,35 @@ initComponent();
 
 ## 总结
 
-这次排查让我对 Astro View Transitions 的工作机制有了更深的理解。关键是意识到：**`is:inline` 脚本在 View Transitions 后默认不会重新执行**，需要通过 `data-astro-rerun` 属性来显式声明需要重新执行。
+这次排查让我对 Astro View Transitions 的工作机制有了更深的理解。
 
-如果你也在使用 Astro 的 View Transitions 功能，并且遇到了类似的「只有直接访问页面才正常，客户端导航就失效」的问题，不妨检查一下你的脚本是否有 `data-astro-rerun` 属性。
+### 关键发现
+
+1. **`is:inline` 脚本在 View Transitions 后默认不会重新执行**——需要通过 `data-astro-rerun` 属性来显式声明
+2. **Astro v5.16.6 存在 bug**——`<body>` 中的 `data-astro-rerun` 脚本在页面过渡后会被移除且不会重新执行
+3. **`<head>` 中的脚本不会被 View Transitions 替换**——这是目前最可靠的解决方案
+
+### 推荐的解决方案
+
+对于需要在 View Transitions 后执行初始化的场景，推荐将脚本放在 `<head>` 中，使用 `astro:page-load` 事件：
+
+```astro
+<head>
+  <ClientRouter />
+  <script is:inline>
+    document.addEventListener("astro:page-load", () => {
+      // 初始化逻辑
+    });
+  </script>
+</head>
+```
+
+这种方式的优势：
+- 脚本在页面过渡过程中保持不变
+- 事件监听器不会丢失
+- 不依赖 `data-astro-rerun` 属性（避开潜在的 bug）
+
+如果你也在使用 Astro 的 View Transitions 功能，并且遇到了类似的「只有直接访问页面才正常，客户端导航就失效」的问题，希望这篇排查记录能帮到你。
 
 ## 参考资源
 
