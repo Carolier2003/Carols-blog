@@ -153,14 +153,9 @@ const { frontmatter } = Astro.props;
               <!-- Month labels and cells will be inserted here -->
             </svg>
           </div>
-          <!-- Legend -->
-          <div class="flex items-center justify-end gap-2 mt-4 text-xs opacity-50">
+          <!-- Legend (动态渲染以适配主题) -->
+          <div id="contrib-legend" class="flex items-center justify-end gap-2 mt-4 text-xs opacity-50">
             <span>Less</span>
-            <div class="w-3 h-3 rounded-sm" style="background-color: #ebedf0;"></div>
-            <div class="w-3 h-3 rounded-sm" style="background-color: rgba(0, 108, 172, 0.3);"></div>
-            <div class="w-3 h-3 rounded-sm" style="background-color: rgba(0, 108, 172, 0.5);"></div>
-            <div class="w-3 h-3 rounded-sm" style="background-color: rgba(0, 108, 172, 0.75);"></div>
-            <div class="w-3 h-3 rounded-sm" style="background-color: rgb(0, 108, 172);"></div>
             <span>More</span>
           </div>
         </div>
@@ -242,10 +237,29 @@ const { frontmatter } = Astro.props;
             tooltip.classList.remove('visible');
           }
 
+          function renderLegend() {
+            const legendContainer = document.getElementById('contrib-legend');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+            legendContainer.innerHTML = '<span>Less</span>';
+
+            for (let level = 0; level <= 4; level++) {
+              const div = document.createElement('div');
+              div.className = 'w-3 h-3 rounded-sm';
+              div.style.backgroundColor = getColor(level, isDark);
+              legendContainer.appendChild(div);
+            }
+
+            legendContainer.appendChild(document.createElement('span')).textContent = 'More';
+          }
+
           function renderContributions(data) {
             document.getElementById('contrib-total').textContent = data.total.toLocaleString();
             document.getElementById('contrib-github').textContent = data.githubTotal.toLocaleString();
             document.getElementById('contrib-gitcode').textContent = data.gitcodeTotal.toLocaleString();
+
+            // 渲染图例
+            renderLegend();
 
             const svg = document.getElementById('contrib-svg');
             svg.innerHTML = '';
@@ -435,6 +449,23 @@ const { frontmatter } = Astro.props;
 
           // Also fetch on View Transitions
           document.addEventListener('astro:page-load', fetchContributions);
+
+          // Listen for theme changes and update legend
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.attributeName === 'data-theme') {
+                // Re-render legend with new theme
+                const cached = sessionStorage.getItem('contributions');
+                if (cached) {
+                  try {
+                    const data = JSON.parse(cached);
+                    renderLegend();
+                  } catch (e) {}
+                }
+              }
+            });
+          });
+          observer.observe(document.documentElement, { attributes: true });
         })();
       </script>
 
