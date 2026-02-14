@@ -102,10 +102,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
 <style>
   .upload-container {
-    background: linear-gradient(135deg,
-      color-mix(in srgb, var(--accent) 5%, var(--background)) 0%,
-      var(--background) 100%
-    );
+    background: var(--background);
     border: 1px solid var(--border);
     border-radius: 1rem;
     padding: 2rem;
@@ -119,12 +116,8 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: linear-gradient(90deg,
-      var(--accent) 0%,
-      color-mix(in srgb, var(--accent) 70%, white) 50%,
-      var(--accent) 100%
-    );
+    height: 2px;
+    background: var(--border);
   }
 
   /* Header */
@@ -136,7 +129,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   .upload-icon-wrapper {
     width: 3.5rem;
     height: 3.5rem;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
     border-radius: 1rem;
     display: flex;
     align-items: center;
@@ -148,17 +141,18 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   .upload-icon {
     width: 1.75rem;
     height: 1.75rem;
-    color: var(--accent);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     transition: transform 0.3s ease;
   }
 
   .upload-container:hover .upload-icon-wrapper {
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    background: color-mix(in srgb, var(--foreground) 12%, transparent);
     transform: translateY(-2px);
   }
 
   .upload-container:hover .upload-icon {
     transform: translateY(-1px);
+    color: var(--foreground);
   }
 
   .upload-title {
@@ -187,13 +181,13 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   }
 
   .drop-zone:hover {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 3%, var(--background));
+    border-color: color-mix(in srgb, var(--foreground) 40%, var(--border));
+    background: color-mix(in srgb, var(--foreground) 2%, var(--background));
   }
 
   .drop-zone.drag-active {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 8%, var(--background));
+    border-color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 5%, var(--background));
   }
 
   .file-input {
@@ -225,7 +219,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   }
 
   .drop-zone:hover .drop-icon {
-    color: var(--accent);
+    color: var(--foreground);
     opacity: 1;
     transform: scale(1.05);
   }
@@ -258,7 +252,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--accent) 10%, var(--background));
+    background: color-mix(in srgb, var(--foreground) 8%, var(--background));
     border-radius: 0.625rem;
     opacity: 0;
     pointer-events: none;
@@ -272,7 +266,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   .drag-icon {
     width: 3rem;
     height: 3rem;
-    color: var(--accent);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
     margin-bottom: 0.75rem;
     animation: bounce 1s ease infinite;
   }
@@ -285,7 +279,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   .drag-text {
     font-size: 1rem;
     font-weight: 500;
-    color: var(--accent);
+    color: var(--foreground);
     margin: 0;
   }
 
@@ -293,9 +287,9 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
   .progress-section {
     margin-top: 1.5rem;
     padding: 1.25rem;
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
     border-radius: 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    border: 1px solid var(--border);
   }
 
   .progress-header {
@@ -326,7 +320,7 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
 
   .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
+    background: var(--foreground);
     border-radius: 9999px;
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     width: 0%;
@@ -377,11 +371,21 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
     box-shadow: 0 4px 12px color-mix(in srgb, var(--foreground) 5%, transparent);
   }
 
-  .result-image {
+  .result-image-wrapper {
+    position: relative;
     width: 100%;
     aspect-ratio: 1;
-    object-fit: cover;
     background: var(--border);
+    overflow: hidden;
+  }
+
+  .result-image-wrapper > img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .result-info {
@@ -712,7 +716,9 @@ const { apiUrl = "https://api.kon-carol.xyz" } = Astro.props;
         const displayUrl = file.imagesUrl || file.url;
 
         card.innerHTML = `
-          <img class="result-image" src="${previewUrl}" alt="${escapeHtml(file.originalName)}" loading="lazy" />
+          <div class="result-image-wrapper">
+            <img src="${previewUrl}" alt="${escapeHtml(file.originalName)}" loading="lazy" />
+          </div>
           <div class="result-info">
             <p class="result-name">${escapeHtml(file.originalName)}</p>
             <p class="result-size">${sizeStr}</p>

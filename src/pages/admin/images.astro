@@ -56,21 +56,25 @@ import { SITE } from "@/config";
           </svg>
           <h2 class="section-title">已上传图片</h2>
         </div>
-        <button class="refresh-btn" id="refresh-btn" title="刷新列表">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
+        <div class="section-actions">
+          <button class="refresh-btn" id="refresh-btn" title="刷新列表">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div class="gallery-grid" id="gallery-grid">
+      <!-- File List -->
+      <div class="file-list-container" id="file-list-container">
         <div class="loading-state">
           <div class="loading-spinner"></div>
           <p>加载图片中...</p>
         </div>
       </div>
 
+      <!-- Empty State -->
       <div class="gallery-empty" id="gallery-empty" style="display: none;">
         <div class="empty-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -83,11 +87,21 @@ import { SITE } from "@/config";
         <p class="empty-hint">上传你的第一张图片开始使用</p>
       </div>
 
-      <div class="gallery-pagination" id="gallery-pagination" style="display: none;">
-        <button class="load-more-btn" id="load-more-btn">
-          <span>加载更多</span>
+      <!-- Pagination -->
+      <div class="pagination" id="pagination" style="display: none;">
+        <button class="pagination-btn" id="prev-btn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          上一页
+        </button>
+        <span class="pagination-info">
+          第 <span id="current-page">1</span> / <span id="total-pages">1</span> 页
+        </span>
+        <button class="pagination-btn" id="next-btn" disabled>
+          下一页
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
       </div>
@@ -112,7 +126,7 @@ import { SITE } from "@/config";
             <h3>图片访问</h3>
           </div>
           <code class="api-code">
-            https://api.kon-carol.xyz/api/images/view/&#123;key&#125;
+            https://api.kon-carol.xyz/api/images/view/&amp;#123;key&amp;#125;
           </code>
           <p class="api-desc">基础访问 URL，支持实时参数调整尺寸和格式</p>
         </div>
@@ -150,7 +164,7 @@ import { SITE } from "@/config";
             </svg>
             <h3>Markdown 示例</h3>
           </div>
-          <pre class="api-code-block"><code>![图片描述](https://api.kon-carol.xyz/api/images/view/&#123;key&#125;?w=800&#38;h=400&#38;fit=cover&#38;f=webp)</code></pre>
+          <pre class="api-code-block"><code>![图片描述](https://api.kon-carol.xyz/api/images/view/&amp;amp;#123;key&amp;amp;#125;?w=800&amp;h=400&amp;fit=cover&amp;f=webp)</code></pre>
           <p class="api-tip">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -164,10 +178,40 @@ import { SITE } from "@/config";
     </section>
   </main>
 
+  <!-- Image Preview Modal -->
+  <div class="preview-modal" id="preview-modal" style="display: none;">
+    <div class="preview-overlay" id="preview-overlay"></div>
+    <div class="preview-content">
+      <button class="preview-close" id="preview-close" title="关闭 (ESC)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <button class="preview-nav preview-prev" id="preview-prev" title="上一张 (←)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <button class="preview-nav preview-next" id="preview-next" title="下一张 (→)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+      <div class="preview-image-wrapper">
+        <img id="preview-image" src="" alt="预览" />
+      </div>
+      <div class="preview-info" id="preview-info">
+        <span class="preview-filename"></span>
+        <span class="preview-meta"></span>
+      </div>
+    </div>
+  </div>
+
   <Footer />
 </Layout>
 
-<style>
+<style is:global>
   /* Page Header */
   .page-header {
     display: flex;
@@ -176,10 +220,7 @@ import { SITE } from "@/config";
     justify-content: space-between;
     gap: 1.5rem;
     padding: 1.5rem 2rem;
-    background: linear-gradient(135deg,
-      color-mix(in srgb, var(--accent) 8%, var(--background)) 0%,
-      var(--background) 100%
-    );
+    background: var(--background);
     border: 1px solid var(--border);
     border-radius: 1rem;
     position: relative;
@@ -192,12 +233,8 @@ import { SITE } from "@/config";
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: linear-gradient(90deg,
-      var(--accent) 0%,
-      color-mix(in srgb, var(--accent) 70%, white) 50%,
-      var(--accent) 100%
-    );
+    height: 2px;
+    background: var(--border);
   }
 
   .header-content {
@@ -209,7 +246,7 @@ import { SITE } from "@/config";
   .header-icon-wrapper {
     width: 3rem;
     height: 3rem;
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
     border-radius: 0.875rem;
     display: flex;
     align-items: center;
@@ -219,7 +256,7 @@ import { SITE } from "@/config";
   .header-icon {
     width: 1.5rem;
     height: 1.5rem;
-    color: var(--accent);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
   }
 
   .page-title {
@@ -239,6 +276,8 @@ import { SITE } from "@/config";
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   .stat-item {
@@ -246,12 +285,14 @@ import { SITE } from "@/config";
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .stat-value {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--foreground);
     font-family: var(--font-google-sans-code), monospace;
   }
 
@@ -273,7 +314,7 @@ import { SITE } from "@/config";
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
   }
 
   .section-title-wrapper {
@@ -285,7 +326,7 @@ import { SITE } from "@/config";
   .section-icon {
     width: 1.25rem;
     height: 1.25rem;
-    color: var(--accent);
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
   }
 
   .section-title {
@@ -295,29 +336,35 @@ import { SITE } from "@/config";
     margin: 0;
   }
 
+  .section-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .refresh-btn {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2rem;
+    height: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .refresh-btn:hover {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-    border-color: var(--accent);
-    color: var(--accent);
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 40%, var(--border));
+    color: var(--foreground);
   }
 
   .refresh-btn svg {
-    width: 1rem;
-    height: 1rem;
+    width: 0.875rem;
+    height: 0.875rem;
     transition: transform 0.3s ease;
   }
 
@@ -330,124 +377,184 @@ import { SITE } from "@/config";
     margin-bottom: 3rem;
   }
 
-  .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
-  }
-
-  .gallery-item {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    border: 1px solid var(--border);
+  /* File List - GitHub/Linear Style */
+  .file-list-container {
     background: var(--background);
-    transition: all 0.2s ease;
-    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    font-size: 0.8125rem;
   }
 
-  .gallery-item:hover {
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 8%, transparent);
-    transform: translateY(-2px);
-  }
-
-  .gallery-item img {
+  .file-list {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
   }
 
-  .gallery-item:hover img {
-    transform: scale(1.05);
+  .file-list-header {
+    display: grid;
+    grid-template-columns: 1fr 140px 80px 90px 60px;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: color-mix(in srgb, var(--foreground) 3%, transparent);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 50%, var(--muted));
   }
 
-  .gallery-item-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(0, 0, 0, 0.4) 50%,
-      transparent 100%
-    );
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 0.75rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
-  .gallery-item:hover .gallery-item-overlay {
-    opacity: 1;
-  }
-
-  .gallery-item-name {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.9);
+  .file-list-header > span {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin: 0 0 0.5rem;
   }
 
-  .gallery-item-actions {
+  .file-list-body {
     display: flex;
-    gap: 0.375rem;
+    flex-direction: column;
   }
 
-  .gallery-item-btn {
-    flex: 1;
+  .file-list-row {
+    display: grid;
+    grid-template-columns: 1fr 140px 80px 90px 60px;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s ease;
+    cursor: pointer;
+  }
+
+  .file-list-row:last-child {
+    border-bottom: none;
+  }
+
+  .file-list-row:hover {
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+
+  .file-list-row > * {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .col-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .col-date {
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
+  }
+
+  .col-size {
+    text-align: right;
+    padding-right: 0.5rem;
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
+    font-family: var(--font-google-sans-code), monospace;
+  }
+
+  .col-type {
+    color: color-mix(in srgb, var(--foreground) 50%, var(--muted));
+  }
+
+  .col-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .file-list-row:hover .col-actions {
+    opacity: 1;
+  }
+
+  .file-name-text {
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* File thumbnail */
+  .file-thumbnail {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.25rem;
-    padding: 0.375rem;
-    font-size: 0.6875rem;
-    font-weight: 500;
+  }
+
+  .file-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .file-name-text {
+    flex: 1;
+    min-width: 0;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Action buttons */
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
     border: none;
-    border-radius: 0.375rem;
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    backdrop-filter: blur(8px);
+    border-radius: 0.25rem;
+    background: transparent;
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.12s ease;
   }
 
-  .gallery-item-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+  .action-btn:hover {
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    color: var(--foreground);
   }
 
-  .gallery-item-btn svg {
+  .action-btn.delete:hover {
+    background: color-mix(in srgb, #ef4444 15%, transparent);
+    color: #ef4444;
+  }
+
+  .action-btn svg {
     width: 0.75rem;
     height: 0.75rem;
   }
 
-  .gallery-item-btn.delete:hover {
-    background: #ef4444;
-  }
-
   /* Loading State */
   .loading-state {
-    grid-column: 1 / -1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4rem;
+    padding: 3rem;
     color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
   }
 
   .loading-spinner {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
     border: 2px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 0.625rem;
   }
 
   @keyframes spin {
@@ -456,65 +563,226 @@ import { SITE } from "@/config";
 
   /* Empty State */
   .gallery-empty {
-    grid-column: 1 / -1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4rem;
+    padding: 3rem;
     text-align: center;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
   }
 
   .empty-icon {
-    width: 4rem;
-    height: 4rem;
-    color: color-mix(in srgb, var(--foreground) 40%, var(--muted));
-    margin-bottom: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: color-mix(in srgb, var(--foreground) 30%, var(--muted));
+    margin-bottom: 0.625rem;
   }
 
   .empty-title {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--foreground);
-    margin: 0 0 0.375rem;
+    margin: 0 0 0.25rem;
   }
 
   .empty-hint {
-    font-size: 0.875rem;
-    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--foreground) 50%, var(--muted));
     margin: 0;
   }
 
   /* Pagination */
-  .gallery-pagination {
-    margin-top: 2rem;
-    text-align: center;
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
   }
 
-  .load-more-btn {
-    display: inline-flex;
+  .pagination-btn {
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.5rem;
-    font-size: 0.875rem;
+    gap: 0.375rem;
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--foreground);
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 0.625rem;
+    border-radius: 0.375rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.12s ease;
   }
 
-  .load-more-btn:hover {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  .pagination-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
     border-color: var(--accent);
-    color: var(--accent);
   }
 
-  .load-more-btn svg {
-    width: 1rem;
-    height: 1rem;
+  .pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .pagination-btn svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .pagination-info {
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
+  }
+
+  .pagination-info span {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  /* Preview Modal */
+  .preview-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(4px);
+  }
+
+  .preview-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .preview-close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    z-index: 10;
+  }
+
+  .preview-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .preview-close svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .preview-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    z-index: 10;
+  }
+
+  .preview-nav:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .preview-nav:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+
+  .preview-nav svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .preview-prev {
+    left: 1.25rem;
+  }
+
+  .preview-next {
+    right: 1.25rem;
+  }
+
+  .preview-image-wrapper {
+    max-width: 90%;
+    max-height: 75%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview-image-wrapper img {
+    max-width: 100%;
+    max-height: 65vh;
+    object-fit: contain;
+    border-radius: 0.375rem;
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+  }
+
+  .preview-info {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 0.375rem;
+    backdrop-filter: blur(8px);
+  }
+
+  .preview-filename {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: white;
+    max-width: 360px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .preview-meta {
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.65);
   }
 
   /* API Section */
@@ -526,15 +794,15 @@ import { SITE } from "@/config";
 
   .api-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.875rem;
   }
 
   .api-card {
-    padding: 1.25rem;
+    padding: 1rem;
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
   }
 
   .api-card-full {
@@ -544,13 +812,13 @@ import { SITE } from "@/config";
   .api-card-header {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    margin-bottom: 0.875rem;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .api-method {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.6875rem;
+    padding: 0.125rem 0.375rem;
+    font-size: 0.625rem;
     font-weight: 600;
     color: #16a34a;
     background: color-mix(in srgb, #16a34a 10%, transparent);
@@ -564,39 +832,39 @@ import { SITE } from "@/config";
   }
 
   .api-card h3 {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--foreground);
     margin: 0;
   }
 
   .api-icon {
-    width: 1.125rem;
-    height: 1.125rem;
-    color: var(--accent);
+    width: 1rem;
+    height: 1rem;
+    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
   }
 
   .api-code {
     display: block;
-    padding: 0.75rem;
-    font-size: 0.8125rem;
+    padding: 0.625rem;
+    font-size: 0.75rem;
     font-family: var(--font-google-sans-code), monospace;
     color: var(--foreground);
-    background: color-mix(in srgb, var(--foreground) 5%, transparent);
-    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border-radius: 0.375rem;
     overflow-x: auto;
     word-break: break-all;
   }
 
   .api-code-block {
-    margin: 0 0 0.875rem;
-    padding: 1rem;
-    font-size: 0.8125rem;
+    margin: 0 0 0.75rem;
+    padding: 0.875rem;
+    font-size: 0.75rem;
     font-family: var(--font-google-sans-code), monospace;
-    line-height: 1.6;
+    line-height: 1.5;
     color: var(--foreground);
-    background: color-mix(in srgb, var(--foreground) 5%, transparent);
-    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border-radius: 0.375rem;
     overflow-x: auto;
   }
 
@@ -607,68 +875,68 @@ import { SITE } from "@/config";
   }
 
   .api-desc {
-    font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
-    margin: 0.75rem 0 0;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
+    margin: 0.625rem 0 0;
   }
 
   .api-params {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.375rem;
   }
 
   .param {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-size: 0.8125rem;
+    gap: 0.625rem;
+    font-size: 0.75rem;
   }
 
   .param code {
-    min-width: 3rem;
-    padding: 0.25rem 0.5rem;
+    min-width: 2.5rem;
+    padding: 0.125rem 0.375rem;
     font-family: var(--font-google-sans-code), monospace;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 10%, transparent);
     border-radius: 0.25rem;
   }
 
   .param span {
-    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
   }
 
   .api-tip {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 0.375rem;
     margin: 0;
-    padding: 0.75rem;
-    font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--foreground) 70%, var(--muted));
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
-    border-radius: 0.5rem;
+    padding: 0.625rem;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--foreground) 60%, var(--muted));
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+    border-radius: 0.375rem;
   }
 
   .api-tip svg {
-    width: 1rem;
-    height: 1rem;
+    width: 0.875rem;
+    height: 0.875rem;
     color: var(--accent);
     flex-shrink: 0;
-    margin-top: 0.125rem;
+    margin-top: 0.0625rem;
   }
 
   .api-tip code {
-    padding: 0.125rem 0.375rem;
-    font-size: 0.75rem;
+    padding: 0.0625rem 0.25rem;
+    font-size: 0.6875rem;
     color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     border-radius: 0.25rem;
   }
 
   /* Responsive */
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .page-header {
       flex-direction: column;
       text-align: center;
@@ -681,12 +949,28 @@ import { SITE } from "@/config";
 
     .header-stats {
       width: 100%;
-      justify-content: center;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
     }
 
-    .gallery-grid {
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.75rem;
+    .col-date,
+    .col-header-date,
+    .col-type,
+    .col-header-type {
+      display: none;
+    }
+
+    .col-actions {
+      opacity: 1;
+      width: auto;
+    }
+
+    .col-header-actions {
+      width: auto;
+    }
+
+    .preview-nav {
+      display: none;
     }
 
     .api-grid {
@@ -697,22 +981,22 @@ import { SITE } from "@/config";
   /* Toast */
   .toast {
     position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    padding: 0.875rem 1.25rem;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    padding: 0.75rem 1rem;
     background: var(--foreground);
     color: var(--background);
-    border-radius: 0.625rem;
-    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
     font-weight: 500;
     z-index: 1000;
     opacity: 0;
     transform: translateY(1rem);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 10px 40px color-mix(in srgb, var(--foreground) 15%, transparent);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--foreground) 12%, transparent);
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.5rem;
   }
 
   .toast.show {
@@ -733,138 +1017,206 @@ import { SITE } from "@/config";
 
 <script>
   const API_URL = 'https://api.kon-carol.xyz';
-  let currentCursor: string | undefined;
-  let isLoading = false;
+  const ITEMS_PER_PAGE = 20;
+
+  let allImages: ImageItem[] = [];
+  let currentPage = 1;
   let totalSize = 0;
+  let previewIndex = 0;
 
   interface ImageItem {
     key: string;
     size: number;
     uploadedAt: string;
     url: string;
+    r2Url?: string;
     imagesUrl?: string;
     customMetadata?: Record<string, string>;
   }
 
-  async function loadImages(cursor?: string) {
-    if (isLoading) return;
-    isLoading = true;
-
-    const grid = document.getElementById('gallery-grid');
+  async function loadAllImages() {
+    const container = document.getElementById('file-list-container');
     const empty = document.getElementById('gallery-empty');
-    const pagination = document.getElementById('gallery-pagination');
+    const pagination = document.getElementById('pagination');
     const refreshBtn = document.getElementById('refresh-btn');
 
     if (refreshBtn) refreshBtn.style.pointerEvents = 'none';
 
     try {
       const url = new URL(`${API_URL}/api/images`);
-      url.searchParams.set('limit', '24');
-      if (cursor) url.searchParams.set('cursor', cursor);
+      url.searchParams.set('limit', '1000');
 
       const response = await fetch(url.toString());
       const result = await response.json();
 
       if (!result.success) throw new Error(result.message || '加载失败');
 
-      if (!cursor) {
-        if (grid) grid.innerHTML = '';
-        totalSize = 0;
-      }
+      allImages = result.data.images;
 
-      const images: ImageItem[] = result.data.images;
-
-      if (images.length === 0 && !cursor) {
-        if (grid) grid.style.display = 'none';
+      if (allImages.length === 0) {
+        if (container) container.style.display = 'none';
         if (empty) empty.style.display = 'flex';
         if (pagination) pagination.style.display = 'none';
         updateStats(0, 0);
         return;
       }
 
-      if (grid) grid.style.display = 'grid';
+      if (container) container.style.display = 'block';
       if (empty) empty.style.display = 'none';
+      if (pagination) pagination.style.display = 'flex';
 
-      images.forEach(image => {
-        totalSize += image.size;
-        addImageToGrid(image);
-      });
+      totalSize = allImages.reduce((sum, img) => sum + img.size, 0);
+      updateStats(allImages.length, totalSize);
 
-      currentCursor = result.data.cursor;
-      if (pagination) pagination.style.display = result.data.truncated ? 'block' : 'none';
-
-      updateStats(
-        grid?.querySelectorAll('.gallery-item').length || 0,
-        totalSize
-      );
+      currentPage = 1;
+      renderPage();
     } catch (error) {
       console.error('加载图片失败:', error);
+      if (container) {
+        container.innerHTML = `
+          <div class="loading-state">
+            <p>加载失败，请刷新重试</p>
+          </div>
+        `;
+      }
       showToast('加载失败，请刷新重试', 'error');
     } finally {
-      isLoading = false;
       if (refreshBtn) refreshBtn.style.pointerEvents = '';
     }
   }
 
-  function addImageToGrid(image: ImageItem) {
-    const grid = document.getElementById('gallery-grid');
-    if (!grid) return;
+  function getFileType(filename: string): string {
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const typeMap: Record<string, string> = {
+      'png': 'PNG 图像',
+      'jpg': 'JPEG 图像',
+      'jpeg': 'JPEG 图像',
+      'gif': 'GIF 图像',
+      'webp': 'WebP 图像',
+      'avif': 'AVIF 图像',
+      'svg': 'SVG 图像'
+    };
+    return typeMap[ext] || `${ext.toUpperCase()} 图像`;
+  }
 
-    const item = document.createElement('div');
-    item.className = 'gallery-item';
-    item.dataset.key = image.key;
+  function renderPage() {
+    const container = document.getElementById('file-list-container');
+    if (!container) return;
 
-    const previewUrl = image.imagesUrl || image.url;
-    const originalName = image.customMetadata?.originalName || image.key;
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const pageImages = allImages.slice(start, end);
+    const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
 
-    item.innerHTML = `
-      <img src="${previewUrl}" alt="${escapeHtml(originalName)}" loading="lazy" />
-      <div class="gallery-item-overlay">
-        <p class="gallery-item-name">${escapeHtml(originalName)}</p>
-        <div class="gallery-item-actions">
-          <button class="gallery-item-btn copy-btn" data-url="${image.imagesUrl || image.url}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-            复制
-          </button>
-          <button class="gallery-item-btn delete">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            删除
-          </button>
+    let html = `
+      <div class="file-list">
+        <div class="file-list-header">
+          <span>名称</span>
+          <span>修改日期</span>
+          <span>大小</span>
+          <span>类型</span>
+          <span></span>
         </div>
-      </div>
+        <div class="file-list-body">
     `;
 
-    const copyBtn = item.querySelector('.copy-btn');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', async (e) => {
+    pageImages.forEach((image, index) => {
+      const actualIndex = start + index;
+      // 优先级：R2 > Images > API
+      const previewUrl = image.r2Url || image.imagesUrl || image.url;
+      const displayUrl = image.r2Url || image.imagesUrl || image.url;
+      const originalName = image.customMetadata?.originalName || image.key;
+      const sizeStr = formatFileSize(image.size);
+      const dateStr = formatDate(image.uploadedAt);
+      const fileType = getFileType(originalName);
+
+      html += `
+        <div class="file-list-row" data-index="${actualIndex}">
+          <div class="col-name" data-preview="${actualIndex}">
+            <div class="file-thumbnail">
+              <img src="${previewUrl}?w=64&h=64&fit=cover" alt="" loading="lazy" />
+            </div>
+            <span class="file-name-text" title="${escapeHtml(originalName)}">${escapeHtml(originalName)}</span>
+          </div>
+          <span class="col-date">${dateStr}</span>
+          <span class="col-size">${sizeStr}</span>
+          <span class="col-type">${fileType}</span>
+          <div class="col-actions">
+            <button class="action-btn copy-btn" data-url="${displayUrl}" title="复制链接">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </button>
+            <button class="action-btn delete" data-key="${image.key}" data-size="${image.size}" title="删除">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    html += '</div></div>';
+    container.innerHTML = html;
+
+    updatePagination(totalPages);
+    attachEventListeners();
+  }
+
+  function updatePagination(totalPages: number) {
+    const prevBtn = document.getElementById('prev-btn') as HTMLButtonElement;
+    const nextBtn = document.getElementById('next-btn') as HTMLButtonElement;
+    const currentPageEl = document.getElementById('current-page');
+    const totalPagesEl = document.getElementById('total-pages');
+
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+    if (currentPageEl) currentPageEl.textContent = currentPage.toString();
+    if (totalPagesEl) totalPagesEl.textContent = totalPages.toString();
+  }
+
+  function attachEventListeners() {
+    // Click on row to preview (except action buttons)
+    document.querySelectorAll('.file-list-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('.action-btn')) return;
+
+        const index = parseInt((row as HTMLElement).dataset.index || '0');
+        openPreview(index);
+      });
+    });
+
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const url = copyBtn.getAttribute('data-url');
+        const url = (e.currentTarget as HTMLElement).dataset.url;
         if (url) {
           await copyToClipboard(url);
         }
       });
-    }
+    });
 
-    const deleteBtn = item.querySelector('.delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', async (e) => {
+    document.querySelectorAll('.action-btn.delete').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (confirm(`确定要删除 "${originalName}" 吗？`)) {
-          await deleteImage(image.key, item, image.size);
+        const target = e.currentTarget as HTMLElement;
+        const key = target.dataset.key;
+        const size = parseInt(target.dataset.size || '0');
+        const row = target.closest('.file-list-row');
+        const originalName = row?.querySelector('.file-name-text')?.textContent || key;
+
+        if (key && confirm(`确定要删除 "${originalName}" 吗？`)) {
+          await deleteImage(key, row as HTMLElement, size);
         }
       });
-    }
-
-    grid.appendChild(item);
+    });
   }
 
-  async function deleteImage(key: string, element: HTMLElement, size: number) {
+  async function deleteImage(key: string, _row: HTMLElement, size: number) {
     try {
       const response = await fetch(`${API_URL}/api/images/${key}`, {
         method: 'DELETE',
@@ -873,22 +1225,94 @@ import { SITE } from "@/config";
       const result = await response.json();
       if (!result.success) throw new Error(result.message || '删除失败');
 
-      element.style.opacity = '0';
-      element.style.transform = 'scale(0.9)';
-      setTimeout(() => {
-        element.remove();
+      const index = allImages.findIndex(img => img.key === key);
+      if (index > -1) {
+        allImages.splice(index, 1);
         totalSize -= size;
-        const grid = document.getElementById('gallery-grid');
-        updateStats(
-          grid?.querySelectorAll('.gallery-item').length || 0,
-          totalSize
-        );
-      }, 200);
+      }
 
+      if (allImages.length === 0) {
+        const container = document.getElementById('file-list-container');
+        const empty = document.getElementById('gallery-empty');
+        const pagination = document.getElementById('pagination');
+        if (container) container.style.display = 'none';
+        if (empty) empty.style.display = 'flex';
+        if (pagination) pagination.style.display = 'none';
+      } else {
+        const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
+        if (currentPage > totalPages) {
+          currentPage = totalPages;
+        }
+        renderPage();
+      }
+
+      updateStats(allImages.length, totalSize);
       showToast('删除成功', 'success');
     } catch (error) {
       console.error('删除失败:', error);
       showToast('删除失败，请重试', 'error');
+    }
+  }
+
+  function openPreview(index: number) {
+    previewIndex = index;
+    const modal = document.getElementById('preview-modal');
+    if (!modal) return;
+
+    updatePreviewImage();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePreview() {
+    const modal = document.getElementById('preview-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function updatePreviewImage() {
+    const image = allImages[previewIndex];
+    if (!image) return;
+
+    const imgEl = document.getElementById('preview-image') as HTMLImageElement;
+    const filenameEl = document.querySelector('.preview-filename');
+    const metaEl = document.querySelector('.preview-meta');
+    const prevBtn = document.getElementById('preview-prev') as HTMLButtonElement;
+    const nextBtn = document.getElementById('preview-next') as HTMLButtonElement;
+
+    const previewUrl = image.r2Url || image.imagesUrl || image.url;
+    const originalName = image.customMetadata?.originalName || image.key;
+
+    if (imgEl) {
+      imgEl.style.opacity = '0';
+      setTimeout(() => {
+        imgEl.src = previewUrl;
+        imgEl.onload = () => {
+          imgEl.style.opacity = '1';
+        };
+      }, 150);
+    }
+
+    if (filenameEl) filenameEl.textContent = originalName;
+    if (metaEl) {
+      metaEl.textContent = `${formatFileSize(image.size)} · ${formatDate(image.uploadedAt)} · ${previewIndex + 1} / ${allImages.length}`;
+    }
+
+    if (prevBtn) prevBtn.disabled = previewIndex === 0;
+    if (nextBtn) nextBtn.disabled = previewIndex === allImages.length - 1;
+  }
+
+  function prevImage() {
+    if (previewIndex > 0) {
+      previewIndex--;
+      updatePreviewImage();
+    }
+  }
+
+  function nextImage() {
+    if (previewIndex < allImages.length - 1) {
+      previewIndex++;
+      updatePreviewImage();
     }
   }
 
@@ -916,6 +1340,23 @@ import { SITE } from "@/config";
     return (bytes / 1024 / 1024).toFixed(2) + ' MB';
   }
 
+  function formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).replace(/\//g, '年').replace(/,/, '日 ');
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function showToast(message: string, type: 'success' | 'error') {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
@@ -924,8 +1365,8 @@ import { SITE } from "@/config";
     toast.className = `toast ${type}`;
 
     const iconSvg = type === 'success'
-      ? '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.125rem;height:1.125rem"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
-      : '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.125rem;height:1.125rem"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+      ? '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1rem;height:1rem"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+      : '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1rem;height:1rem"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
 
     toast.innerHTML = `${iconSvg}${message}`;
     document.body.appendChild(toast);
@@ -937,26 +1378,54 @@ import { SITE } from "@/config";
     }, 3000);
   }
 
-  function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
   function init() {
-    loadImages();
+    loadAllImages();
 
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', () => {
-        if (currentCursor) loadImages(currentCursor);
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderPage();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderPage();
+        }
       });
     }
 
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => loadImages());
+      refreshBtn.addEventListener('click', () => loadAllImages());
     }
+
+    const overlay = document.getElementById('preview-overlay');
+    const closeBtn = document.getElementById('preview-close');
+    const prevImgBtn = document.getElementById('preview-prev');
+    const nextImgBtn = document.getElementById('preview-next');
+
+    if (overlay) overlay.addEventListener('click', closePreview);
+    if (closeBtn) closeBtn.addEventListener('click', closePreview);
+    if (prevImgBtn) prevImgBtn.addEventListener('click', prevImage);
+    if (nextImgBtn) nextImgBtn.addEventListener('click', nextImage);
+
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('preview-modal');
+      if (!modal || modal.style.display === 'none') return;
+
+      if (e.key === 'Escape') closePreview();
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'ArrowRight') nextImage();
+    });
   }
 
   init();

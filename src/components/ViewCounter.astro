@@ -29,9 +29,9 @@ const { slug, variant = "full", initialCount = 0, immediate = false } = Astro.pr
   {variant === "compact" && <span class="label">次阅读</span>}
 </span>
 
-<script is:inline>
+<script is:inline data-astro-rerun>
   // ViewCounter inline script - loaded directly in HTML
-  // Note: Using inline script to ensure immediate execution without module bundling issues
+  // data-astro-rerun ensures script re-executes after Astro View Transitions
   const VIEW_API_BASE = "https://api.kon-carol.xyz";
 
   function formatCount(num) {
