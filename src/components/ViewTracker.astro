@@ -12,10 +12,42 @@ const { slug } = Astro.props;
 
 <div data-view-tracker data-slug={slug}></div>
 
-<script>
-  import { hasViewed, markViewed, VIEW_API_BASE } from "@/utils/viewCounter";
+<script is:inline data-astro-rerun>
+  (function() {
+    const VIEW_API_BASE = "https://api.kon-carol.xyz";
 
-  function initViewTracker() {
+    // 检查是否已经记录过浏览量（使用 localStorage）
+    function hasViewed(slug) {
+      try {
+        const key = `viewed:${encodeURIComponent(slug)}`;
+        const lastViewed = localStorage.getItem(key);
+
+        if (!lastViewed) {
+          return false;
+        }
+
+        // 24 小时内不重复计数
+        const lastTime = parseInt(lastViewed, 10);
+        const now = Date.now();
+        const hoursPassed = (now - lastTime) / (1000 * 60 * 60);
+
+        return hoursPassed < 24;
+      } catch (e) {
+        console.debug("Failed to check viewed status:", e);
+        return false;
+      }
+    }
+
+    // 标记已浏览
+    function markViewed(slug) {
+      try {
+        const key = `viewed:${encodeURIComponent(slug)}`;
+        localStorage.setItem(key, Date.now().toString());
+      } catch (e) {
+        console.debug("Failed to mark viewed:", e);
+      }
+    }
+
     // 确保在浏览器环境执行
     if (typeof document === "undefined") return;
 
@@ -28,7 +60,7 @@ const { slug } = Astro.props;
     let hasTracked = false;
 
     // 发送浏览记录
-    async function trackView(slug: string) {
+    async function trackView(slug) {
       // 双重检查：内存标志 + localStorage
       if (hasTracked || hasViewed(slug)) {
         console.debug("Already viewed recently, skipping track");
@@ -63,7 +95,7 @@ const { slug } = Astro.props;
     }
 
     // 检查是否是搜索引擎爬虫或预览
-    function isBot(): boolean {
+    function isBot() {
       return /bot|crawler|spider|crawling/i.test(navigator.userAgent);
     }
 
@@ -75,7 +107,7 @@ const { slug } = Astro.props;
       }
 
       // 保存 slug 到局部变量，确保回调中能访问（前面已检查不为空）
-      const currentSlug = slug!;
+      const currentSlug = slug;
 
       // 方案1：延迟 3 秒后计数（确保用户真正阅读）
       const timeoutId = setTimeout(() => {
@@ -110,10 +142,5 @@ const { slug } = Astro.props;
     } else {
       initTracker();
     }
-
-    // 处理 Astro 页面过渡
-    document.addEventListener("astro:page-load", initTracker);
-  }
-
-  initViewTracker();
+  })();
 </script>
