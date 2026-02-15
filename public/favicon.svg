@@ -11,6 +11,8 @@
     }
   </style>
   <rect width="64" height="64" rx="14" class="bg"/>
-  <text x="16" y="42" font-size="28" class="letter" font-family="monospace">C</text>
-  <text x="30" y="42" font-size="26" class="braces" font-family="monospace">{}</text>
+
+  <text x="32" y="32" font-family="monospace" text-anchor="middle" dominant-baseline="central">
+    <tspan font-size="28" class="letter">C</tspan><tspan font-size="26" class="braces">{}</tspan>
+  </text>
 </svg>
