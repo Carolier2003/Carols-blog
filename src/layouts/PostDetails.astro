@@ -301,4 +301,67 @@ const nextPost =
   document.addEventListener("astro:after-swap", () =>
     window.scrollTo({ left: 0, top: 0, behavior: "instant" })
   );
+
+  /** Medium Zoom - Image click to zoom */
+  async function initMediumZoom() {
+    // Load medium-zoom from CDN if not already loaded
+    if (!window.mediumZoom) {
+      await new Promise((resolve, reject) => {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    // Detach existing zoom if any
+    if (window.__mediumZoom) {
+      window.__mediumZoom.detach();
+    }
+
+    // Get current theme
+    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+
+    window.__mediumZoom = window.mediumZoom(".app-prose img:not(.no-zoom)", {
+      background: isDark ? "rgba(33, 39, 55, 0.95)" : "rgba(253, 253, 253, 0.95)",
+      margin: 24,
+      scrollOffset: 0,
+    });
+  }
+
+  // Initialize on page load
+  initMediumZoom();
+
+  // Re-initialize after View Transitions (only register once)
+  if (!window.__mediumZoomHandlerRegistered) {
+    window.__mediumZoomHandlerRegistered = true;
+    document.addEventListener("astro:page-load", initMediumZoom);
+  }
 </script>
+
+<style is:global>
+  /* Medium Zoom styles */
+  .medium-zoom-overlay {
+    z-index: 100;
+  }
+
+  .medium-zoom-image--opened {
+    z-index: 101;
+  }
+
+  /* Show zoom cursor on article images */
+  .app-prose img:not(.no-zoom) {
+    cursor: zoom-in;
+    transition: opacity 0.2s ease;
+  }
+
+  .app-prose img:not(.no-zoom):hover {
+    opacity: 0.9;
+  }
+
+  /* Hide cursor when zoomed */
+  .medium-zoom-image--opened {
+    cursor: zoom-out;
+  }
+</style>
