@@ -154,7 +154,11 @@ const structuredData = {
     <!-- Global Contributions data fetcher -->
     <script is:inline>
       (function() {
-        const API_BASE = "https://api.kon-carol.xyz";
+        // Prevent duplicate event listener registration
+        if (window.__contributionsHandlerRegistered) return;
+        window.__contributionsHandlerRegistered = true;
+
+        var API_BASE = "https://api.kon-carol.xyz";
 
         async function fetchContributions() {
           // Only fetch on about page
@@ -164,9 +168,9 @@ const structuredData = {
           if (window.__contributionsData) return;
 
           try {
-            const response = await fetch(`${API_BASE}/api/contributions`);
+            var response = await fetch(API_BASE + "/api/contributions");
             if (response.ok) {
-              const result = await response.json();
+              var result = await response.json();
               if (result.success) {
                 window.__contributionsData = result.data;
                 // Dispatch event to notify React component
@@ -191,39 +195,43 @@ const structuredData = {
     <!-- Global View Transitions handler for ViewCounter and Comments -->
     <script is:inline>
       (function() {
-        const VIEW_API_BASE = "https://api.kon-carol.xyz";
+        // Prevent duplicate initialization
+        if (window.__viewHandlerInitialized) return;
+        window.__viewHandlerInitialized = true;
 
-        function formatCount(num) {
+        window.VIEW_API_BASE = "https://api.kon-carol.xyz";
+
+        window.formatCount = function(num) {
           if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
           if (num >= 1000) return (num / 1000).toFixed(1) + "k";
           return num.toString();
-        }
+        };
 
-        function getCachedViews() {
+        window.getCachedViews = function() {
           try {
-            const cached = sessionStorage.getItem("viewCounts");
-            const timestamp = sessionStorage.getItem("viewCountsTimestamp");
+            var cached = sessionStorage.getItem("viewCounts");
+            var timestamp = sessionStorage.getItem("viewCountsTimestamp");
             if (cached && timestamp && Date.now() - parseInt(timestamp) < 300000) {
               return JSON.parse(cached);
             }
           } catch (e) {}
           return {};
-        }
+        };
 
-        function setCachedViews(views) {
+        window.setCachedViews = function(views) {
           try {
             sessionStorage.setItem("viewCounts", JSON.stringify(views));
             sessionStorage.setItem("viewCountsTimestamp", Date.now().toString());
           } catch (e) {}
-        }
+        };
 
-        async function fetchViewCounts() {
-          const counters = document.querySelectorAll(".view-counter");
-          const slugs = [];
-          const slugToElements = new Map();
+        window.fetchViewCounts = async function() {
+          var counters = document.querySelectorAll(".view-counter");
+          var slugs = [];
+          var slugToElements = new Map();
 
-          counters.forEach((el) => {
-            const slug = el.dataset.slug;
+          counters.forEach(function(el) {
+            var slug = el.dataset.slug;
             if (slug) {
               slugs.push(slug);
               if (!slugToElements.has(slug)) {
@@ -235,12 +243,12 @@ const structuredData = {
 
           if (slugs.length === 0) return;
 
-          const uniqueSlugs = [...new Set(slugs)];
-          const cachedViews = getCachedViews();
-          const slugsToFetch = [];
-          const result = { ...cachedViews };
+          var uniqueSlugs = [...new Set(slugs)];
+          var cachedViews = getCachedViews();
+          var slugsToFetch = [];
+          var result = { ...cachedViews };
 
-          uniqueSlugs.forEach((slug) => {
+          uniqueSlugs.forEach(function(slug) {
             if (cachedViews[slug] === undefined) {
               slugsToFetch.push(slug);
             }
@@ -248,13 +256,13 @@ const structuredData = {
 
           if (slugsToFetch.length > 0) {
             try {
-              const slugsParam = slugsToFetch.join(",");
-              const response = await fetch(
-                `${VIEW_API_BASE}/api/views/batch?slugs=${encodeURIComponent(slugsParam)}`
+              var slugsParam = slugsToFetch.join(",");
+              var response = await fetch(
+                VIEW_API_BASE + "/api/views/batch?slugs=" + encodeURIComponent(slugsParam)
               );
 
               if (response.ok) {
-                const data = await response.json();
+                var data = await response.json();
                 if (data.success && typeof data.views === "object") {
                   Object.assign(result, data.views);
                   Object.assign(cachedViews, data.views);
@@ -264,38 +272,38 @@ const structuredData = {
             } catch (error) {}
           }
 
-          uniqueSlugs.forEach((slug) => {
-            const elements = slugToElements.get(slug);
-            const count = result[slug] ?? 0;
-            elements?.forEach((el) => {
-              const countEl = el.querySelector(".count");
+          uniqueSlugs.forEach(function(slug) {
+            var elements = slugToElements.get(slug);
+            var count = result[slug] ?? 0;
+            elements?.forEach(function(el) {
+              var countEl = el.querySelector(".count");
               if (countEl) {
                 countEl.textContent = formatCount(count);
               }
             });
           });
-        }
+        };
 
-        function cleanupGiscus() {
-          const existingIframe = document.querySelector('iframe.giscus-frame');
+        window.cleanupGiscus = function() {
+          var existingIframe = document.querySelector('iframe.giscus-frame');
           if (existingIframe) existingIframe.remove();
-          const existingScript = document.querySelector('script[data-giscus]');
+          var existingScript = document.querySelector('script[data-giscus]');
           if (existingScript) existingScript.remove();
-          const container = document.getElementById("giscus-container");
+          var container = document.getElementById("giscus-container");
           if (container) container.innerHTML = "";
-        }
+        };
 
-        function loadGiscus() {
-          const container = document.getElementById("giscus-container");
+        window.loadGiscus = function() {
+          var container = document.getElementById("giscus-container");
           if (!container) return;
 
           cleanupGiscus();
 
-          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-          const baseUrl = "https://blog.kon-carol.xyz";
-          const theme = isDark ? `${baseUrl}/giscus-dark.css` : `${baseUrl}/giscus-light.css`;
+          var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          var baseUrl = "https://blog.kon-carol.xyz";
+          var theme = isDark ? baseUrl + "/giscus-dark.css" : baseUrl + "/giscus-light.css";
 
-          const script = document.createElement("script");
+          var script = document.createElement("script");
           script.src = "https://giscus.app/client.js";
           script.setAttribute("data-repo", "Carolier2003/Carols-blog");
           script.setAttribute("data-repo-id", "R_kgDOROT-5Q");
@@ -313,7 +321,7 @@ const structuredData = {
           script.async = true;
 
           container.appendChild(script);
-        }
+        };
 
         function initComponents() {
           fetchViewCounts();
