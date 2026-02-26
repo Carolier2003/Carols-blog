@@ -3,6 +3,7 @@ title: 华为昇腾 NPU 大模型部署实战：从踩坑到量产
 description: 记录本周在华为昇腾 910B NPU 上部署 Qwen3-4B、QED-Nano、GLM-OCR 等模型的完整过程，分享 vLLM 部署、内存优化、设备映射、流式输出等关键技术要点与踩坑经验
 pubDatetime: 2026-02-26
 featured: true
+ogImage: https://r2.kon-carol.xyz/20260226221612007.png
 tags:
   - NPU
   - 华为昇腾
