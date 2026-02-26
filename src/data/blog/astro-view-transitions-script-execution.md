@@ -4,7 +4,6 @@ pubDatetime: 2026-02-14T10:00:00+08:00
 modDatetime: 2026-02-14T19:00:00+08:00
 description: "记录从主页跳转到博文详情页时浏览量计数器、Giscus 评论、贡献热力图无法加载的完整排查过程。涵盖全局方案和局部方案两种解决思路，以及 Skeleton 骨架屏和缓存策略的最佳实践。"
 tags: ["Astro", "View Transitions", "JavaScript", "前端开发", "性能优化"]
-featured: true
 ---
 
 ## 问题现象
