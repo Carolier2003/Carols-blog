@@ -12,15 +12,17 @@ tags:
   - LLM
 ---
 
-这周密集部署了三个大模型到华为昇腾 NPU，从 Qwen3-4B 的顺利部署到 GLM-OCR 的艰难适配，踩了不少坑。这篇博文记录完整的实战经验，希望能帮到正在做 NPU 部署的同学。
+这周密集部署了五个大模型到华为昇腾 NPU，涵盖 vLLM 和 Transformers 两种部署方案，从 Qwen3-4B 的顺利部署到 GLM-OCR 的艰难适配，踩了不少坑。这篇博文记录完整的实战经验，希望能帮到正在做 NPU 部署的同学。
 
 ## 部署概览
 
 | 模型 | 参数 | 架构 | 部署方式 | NPU 设备 | 端口 |
 |------|------|------|----------|----------|------|
-| **Qwen3-4B-Instruct** | 4B | Qwen3ForCausalLM | vLLM Direct | davinci6 | 18006 |
-| **QED-Nano** | 2.5B | Qwen3ForCausalLM | vLLM Direct | davinci5 | 18005 |
-| **GLM-OCR** | 1.3B | GlmOcrForConditionalGeneration | Transformers 原生 | davinci4 | 18004 |
+| **Qwen3-4B-Instruct** | 4B | Qwen3ForCausalLM | vLLM | davinci6 | 18006 |
+| **QED-Nano** | 2.5B | Qwen3ForCausalLM | vLLM | davinci5 | 18005 |
+| **Nanbeige4.1-3B** | 3B | - | vLLM | davinci3 | 18003 |
+| **Eva-4B-V2** | 4B | Qwen3ForCausalLM | Transformers | davinci6 | 18006 |
+| **GLM-OCR** | 1.3B | GlmOcrForConditionalGeneration | Transformers | davinci4 | 18004 |
 
 ## 基础镜像选择：版本决定成败
 
@@ -69,7 +71,15 @@ vllm serve /data/model/Qwen3-4B-Instruct-2507 \
 | max-model-len | 128k/262k | 8k | NPU 内存限制 |
 | gpu-memory-utilization | 0.9 | 0.95 | 提高内存使用效率 |
 
-**经验：** 长上下文模型必须限制 `max-model-len`，根据 NPU 内存和模型大小调整，推荐 8k-16k。
+**不同模型的实际配置：**
+
+| 模型 | 原始上下文 | 部署限制 | NPU 设备 |
+|------|-----------|---------|---------|
+| Qwen3-4B | 128k | 8192 | davinci6 |
+| QED-Nano | 262k | 8192 | davinci5 |
+| Nanbeige4.1-3B | - | 4096 | davinci3 |
+
+**经验：** 长上下文模型必须限制 `max-model-len`，根据 NPU 内存和模型大小调整，推荐 4k-8k。
 
 ## 容器内 NPU 设备 ID 设置：最容易踩的坑
 
@@ -149,7 +159,39 @@ vllm serve ... --port 8000
 docker run -p 18006:8000 ...
 ```
 
-## GLM-OCR：当 vLLM 不支持时的备选方案
+## Transformers 原生方案：当 vLLM 不适用时
+
+对于 vLLM 不支持或 NNAL 库兼容性有问题的模型，Transformers + Flask 是最稳的后备方案。
+
+### Eva-4B-V2：避开 NNAL 兼容性陷阱
+
+Eva-4B-V2 是财务电话会议 Q&A 回避性回答检测模型，部署时遇到 vLLM 的 NNAL（Neural Network Acceleration Library）版本不匹配问题：
+
+```
+libatb.so: undefined symbol
+```
+
+**方案选择：**
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| vLLM | 性能更好，高并发 | NNAL/ATB 库版本要求严格，容易出错 |
+| **Transformers** | **稳定，无额外依赖** | 并发能力较弱（适合分类任务） |
+
+对于 Eva-4B-V2 这种分类任务场景，Transformers 方案完全够用：
+
+```python
+from transformers import AutoModel, AutoProcessor
+
+model = AutoModel.from_pretrained(
+    MODEL_PATH,
+    dtype=torch.bfloat16,
+    trust_remote_code=True,
+    device_map="auto"
+)
+```
+
+### GLM-OCR：架构不兼容的典型案例
 
 GLM-OCR 的部署是最艰难的，因为 vLLM-ascend 根本不支持 `GlmOcrForConditionalGeneration` 架构。
 
@@ -220,7 +262,7 @@ if check_block_repeat(accumulated_text):
 
 ## 最终部署架构
 
-### vLLM 方案（Qwen3-4B / QED-Nano）
+### vLLM 方案（Qwen3-4B / QED-Nano / Nanbeige4.1-3B）
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -250,7 +292,7 @@ if check_block_repeat(accumulated_text):
                     └─────────────────┘
 ```
 
-### Transformers 原生方案（GLM-OCR）
+### Transformers 原生方案（Eva-4B-V2 / GLM-OCR）
 
 ```
 Client Request → Gunicorn (gthread, 4线程) → Flask App → TextIteratorStreamer
