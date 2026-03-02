@@ -41,7 +41,8 @@ export const onRequest = async (context: Context): Promise<Response> => {
   let credentials: string;
 
   try {
-    credentials = atob(base64Credentials);
+    // Use Buffer for base64 decoding (compatible with Cloudflare Workers)
+    credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
   } catch {
     return unauthorizedResponse();
   }
