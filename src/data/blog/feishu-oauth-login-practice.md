@@ -4,6 +4,7 @@ pubDatetime: 2026-06-22T15:00:00Z
 title: 飞书 OAuth 一键登录接入实战
 description: 从零到一完整拆解飞书 OAuth 2.0 授权码模式接入全过程，包含一键授权登录、扫码登录、前端实现、后端 API 设计及安全防重放方案。
 draft: false
+featured: true
 tags:
   - 飞书
   - OAuth
