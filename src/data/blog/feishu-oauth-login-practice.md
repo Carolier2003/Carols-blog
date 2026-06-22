@@ -397,14 +397,14 @@ OAuth 流程中，`state` 参数是标准的 CSRF 防护手段。本项目采用
 
 ```mermaid
 flowchart LR
-    A[GET /config 生成 state] --> B[写入 Redis<br/>TTL 5 分钟]
-    A --> C[返回给前端<br/>存入 sessionStorage]
-    D[回调 /feishu/callback] --> E{校验 state<br/>sessionStorage 是否一致}
+    A[GET /config 生成 state] --> B[写入 Redis - TTL 5 分钟]
+    A --> C[返回给前端 - 存入 sessionStorage]
+    D[回调 /feishu/callback] --> E{校验 state 与<br>sessionStorage 是否一致}
     E -->|不一致| F[拒绝请求]
     E -->|一致| G[POST /verify 提交后端]
-    G --> H{校验 Redis state<br/>是否存在}
-    H -->|不存在或已消费| I[拒绝请求<br/>防重放]
-    H -->|存在| J[原子删除 state<br/>发放登录凭证]
+    G --> H{校验 Redis state 是否存在}
+    H -->|不存在或已消费| I[拒绝请求 防重放]
+    H -->|存在| J[原子删除 state 发放登录凭证]
 ```
 
 | 校验层 | 存储位置 | 作用 |
