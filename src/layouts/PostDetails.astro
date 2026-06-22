@@ -353,16 +353,22 @@ const nextPost =
     }
 
     // Find all mermaid code blocks and convert them
-    // Shiki renders them as: <pre data-language="mermaid"><code><span class="line">...</span></code></pre>
+    // Shiki renders them as: <pre data-language="mermaid"><code><span class="line"><span style="...">content</span></span></code></pre>
     document.querySelectorAll('pre[data-language="mermaid"]').forEach((pre) => {
       if (pre.classList.contains("mermaid")) return;
 
-      // Get raw text content from Shiki spans
-      const rawText = pre.textContent || "";
+      // Extract raw text preserving line breaks from Shiki's <span class="line"> elements
+      const lines = pre.querySelectorAll(".line");
+      let rawText = "";
+      if (lines.length > 0) {
+        rawText = Array.from(lines).map(line => line.textContent).join("\n");
+      } else {
+        rawText = pre.textContent || "";
+      }
 
       // Replace the pre content with raw mermaid syntax
       pre.classList.add("mermaid");
-      pre.innerHTML = rawText;
+      pre.textContent = rawText;
       pre.removeAttribute("style");
       pre.removeAttribute("tabindex");
     });
