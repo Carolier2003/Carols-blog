@@ -30,8 +30,6 @@ Hi，我是 **Carol**，一名 Java 后端工程师。
 如果你对我的文章有任何想法或建议，欢迎通过以下方式联系我：
 
 - GitHub: [@Carolier2003](https://github.com/Carolier2003)
-- X: [@CarolG48818](https://x.com/CarolG48818)
-- Telegram: [@carolier233](https://t.me/carolier233)
 - 邮箱: [jianjiale2003@gmail.com](mailto:jianjiale2003@gmail.com)
 
 感谢你的访问！

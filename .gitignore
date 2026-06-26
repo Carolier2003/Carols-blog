@@ -29,3 +29,8 @@ pnpm-debug.log*
 # pagefind
 
 public/pagefind
+
+# agent/project files
+.agents/
+.hermes/
+skills-lock.json
