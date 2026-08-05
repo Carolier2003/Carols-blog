@@ -21,6 +21,11 @@ commands live in `package.json` scripts and `CLAUDE.md`; below are only the non-
   on the repo's own customized code (e.g. `no-console`, `no-var`, formatting). This is the state of
   the code, not an environment problem — the tooling itself runs correctly. Use `pnpm format` and
   `eslint --fix` only when intentionally cleaning up.
+- **Do not run `pnpm build` while `pnpm dev` is running.** The build shares the Vite/Astro
+  caches and can corrupt the running dev server's module graph, producing `500` responses with
+  `Cannot read properties of undefined (reading 'call')` pointing at `src/config.ts`. The code is
+  fine (a fresh `pnpm build` still passes) — just restart `pnpm dev`, clearing `node_modules/.vite`
+  and `.astro` if it persists.
 - **Admin pages / Cloudflare Pages functions** (`functions/admin/`, `src/pages/admin/`) need
   `ADMIN_USERNAME` / `ADMIN_PASSWORD` and only run under `wrangler pages dev` (`pnpm preview:pages`),
   using `.dev.vars` locally. The plain `pnpm dev` server does not require these.
