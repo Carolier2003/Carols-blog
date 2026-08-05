@@ -219,6 +219,10 @@ const { frontmatter } = Astro.props;
             location.hostname === "localhost"
               ? "http://localhost:8787"
               : "https://api.kon-carol.xyz";
+          // 本地 GitLab 贡献数据：由内网脚本聚合后推送到公开 GitHub 仓库，
+          // 浏览器可直接读取该 raw 文件（CORS: *），无需后端参与。
+          const GITLAB_CALENDAR_URL =
+            "https://raw.githubusercontent.com/Carolier2003/gitlab-heatmap/main/data/calendar.json";
           const months = [
             "Jan",
             "Feb",
@@ -258,6 +262,15 @@ const { frontmatter } = Astro.props;
                   "rgb(0, 108, 172)",
                 ];
             return colors[level] || "#ebedf0";
+          }
+
+          // 合并 GitLab 后按当日总贡献估算色阶，确保含 GitLab 的日期正确着色
+          function levelForCount(count) {
+            if (count <= 0) return 0;
+            if (count <= 2) return 1;
+            if (count <= 5) return 2;
+            if (count <= 9) return 3;
+            return 4;
           }
 
           function formatDate(dateStr) {
@@ -493,6 +506,33 @@ const { frontmatter } = Astro.props;
               if (response.ok) {
                 const result = await response.json();
                 if (result.success && result.data && result.data.weeks) {
+                  // 合并本地 GitLab 贡献（公开 GitHub 仓库托管，浏览器可直接获取）
+                  try {
+                    const glRes = await fetch(GITLAB_CALENDAR_URL);
+                    if (glRes.ok) {
+                      const gitlab = await glRes.json();
+                      let gitlabTotal = 0;
+                      for (const week of result.data.weeks) {
+                        for (const day of week) {
+                          const g = gitlab[day.date] || 0;
+                          if (g > 0) {
+                            day.gitlabCount = g;
+                            day.count += g;
+                            day.level = Math.max(
+                              day.level,
+                              levelForCount(day.count)
+                            );
+                            gitlabTotal += g;
+                          }
+                        }
+                      }
+                      result.data.gitlabTotal = gitlabTotal;
+                      result.data.total += gitlabTotal;
+                    }
+                  } catch (e) {
+                    // GitLab 为可选来源，拉取失败不影响其它来源
+                  }
+
                   // Check if data changed (compare total or last date)
                   let dataChanged = true;
                   if (cached) {
