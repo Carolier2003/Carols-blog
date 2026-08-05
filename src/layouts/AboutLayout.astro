@@ -3,7 +3,6 @@ import type { MarkdownLayoutProps } from "astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Breadcrumb from "@/components/Breadcrumb.astro";
-import GitHubContributions from "@/components/GitHubContributions.tsx";
 // import ContributionHeatmap from "@/components/ContributionHeatmap.astro";
 import Layout from "./Layout.astro";
 import { SITE } from "@/config";
@@ -85,9 +84,9 @@ const { frontmatter } = Astro.props;
           <!-- Heatmap skeleton -->
           <div class="heatmap-scroll-container">
             <div class="skeleton-grid">
-              {Array.from({ length: 52 }).map((_, weekIndex) => (
+              {Array.from({ length: 52 }).map((_, _weekIndex) => (
                 <div class="skeleton-week">
-                  {Array.from({ length: 7 }).map((_, dayIndex) => (
+                  {Array.from({ length: 7 }).map((_, _dayIndex) => (
                     <div class="skeleton-cell"></div>
                   ))}
                 </div>
@@ -251,7 +250,6 @@ const { frontmatter } = Astro.props;
             // Month labels - 根据实际周数据生成
             const monthLabels = [];
             let currentMonth = null;
-            const currentYear = null;
             let isFirstMonth = true; // 标记是否是第一个月
             data.weeks.forEach((week, weekIndex) => {
               // 每周的星期四是该周的代表（用于月份标签）
@@ -404,7 +402,7 @@ const { frontmatter } = Astro.props;
           // Retry button handler
           document.getElementById('retry-btn').addEventListener('click', fetchContributions);
 
-          function renderMockData() {
+          function _renderMockData() {
             // Generate mock data for fallback
             const weeks = [];
             const today = new Date();

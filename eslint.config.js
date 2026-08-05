@@ -16,6 +16,15 @@ export default [
   {
     rules: {
       "no-console": ["error", { allow: ["warn", "error", "debug", "info"] }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "after-used",
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "none",
+        },
+      ],
     },
   },
   {

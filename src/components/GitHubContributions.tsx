@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface Props {
   username: string;
@@ -7,7 +7,7 @@ interface Props {
 // Get navigation count from global
 const getNavCount = () => {
   if (typeof window !== 'undefined') {
-    return (window as any).__vtNavigationCount || 0;
+    return window.__vtNavigationCount || 0;
   }
   return 0;
 };
@@ -19,6 +19,7 @@ const processedNavCounts = new Set<number>();
 declare global {
   interface Window {
     __contributionsData?: ContributionResponse;
+    __vtNavigationCount?: number;
   }
 }
 
@@ -54,7 +55,7 @@ const API_BASE = import.meta.env.DEV
   : 'https://api.kon-carol.xyz';
 
 // Simple SVG-based contribution heatmap component
-export default function GitHubContributions({ username }: Props) {
+export default function GitHubContributions({ username: _username }: Props) {
   // Use navigation count as key to force remount on View Transitions
   const [navKey, setNavKey] = useState(getNavCount());
   const [weeks, setWeeks] = useState<ContributionDay[][]>([]);
@@ -75,7 +76,7 @@ export default function GitHubContributions({ username }: Props) {
     gitcodeCount: 0,
   });
 
-  const fetchContributions = useCallback(async (force = false) => {
+  const _fetchContributions = useCallback(async (force = false) => {
     // Prevent duplicate fetches unless forced
     if (!force && weeks.length > 0) return;
 
