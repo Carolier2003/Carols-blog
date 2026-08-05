@@ -158,7 +158,7 @@ const structuredData = {
         if (window.__contributionsHandlerRegistered) return;
         window.__contributionsHandlerRegistered = true;
 
-        var API_BASE = "https://api.kon-carol.xyz";
+        const API_BASE = "https://api.kon-carol.xyz";
 
         async function fetchContributions() {
           // Only fetch on about page
@@ -168,9 +168,9 @@ const structuredData = {
           if (window.__contributionsData) return;
 
           try {
-            var response = await fetch(API_BASE + "/api/contributions");
+            const response = await fetch(API_BASE + "/api/contributions");
             if (response.ok) {
-              var result = await response.json();
+              const result = await response.json();
               if (result.success) {
                 window.__contributionsData = result.data;
                 // Dispatch event to notify React component
@@ -209,8 +209,8 @@ const structuredData = {
 
         window.getCachedViews = function() {
           try {
-            var cached = sessionStorage.getItem("viewCounts");
-            var timestamp = sessionStorage.getItem("viewCountsTimestamp");
+            const cached = sessionStorage.getItem("viewCounts");
+            const timestamp = sessionStorage.getItem("viewCountsTimestamp");
             if (cached && timestamp && Date.now() - parseInt(timestamp) < 300000) {
               return JSON.parse(cached);
             }
@@ -226,12 +226,12 @@ const structuredData = {
         };
 
         window.fetchViewCounts = async function() {
-          var counters = document.querySelectorAll(".view-counter");
-          var slugs = [];
-          var slugToElements = new Map();
+          const counters = document.querySelectorAll(".view-counter");
+          const slugs = [];
+          const slugToElements = new Map();
 
           counters.forEach(function(el) {
-            var slug = el.dataset.slug;
+            const slug = el.dataset.slug;
             if (slug) {
               slugs.push(slug);
               if (!slugToElements.has(slug)) {
@@ -243,10 +243,10 @@ const structuredData = {
 
           if (slugs.length === 0) return;
 
-          var uniqueSlugs = [...new Set(slugs)];
-          var cachedViews = getCachedViews();
-          var slugsToFetch = [];
-          var result = { ...cachedViews };
+          const uniqueSlugs = [...new Set(slugs)];
+          const cachedViews = getCachedViews();
+          const slugsToFetch = [];
+          const result = { ...cachedViews };
 
           uniqueSlugs.forEach(function(slug) {
             if (cachedViews[slug] === undefined) {
@@ -256,13 +256,13 @@ const structuredData = {
 
           if (slugsToFetch.length > 0) {
             try {
-              var slugsParam = slugsToFetch.join(",");
-              var response = await fetch(
-                VIEW_API_BASE + "/api/views/batch?slugs=" + encodeURIComponent(slugsParam)
-              );
+              const slugsParam = slugsToFetch.join(",");
+              const response = await fetch(
+          VIEW_API_BASE + "/api/views/batch?slugs=" + encodeURIComponent(slugsParam)
+        );
 
               if (response.ok) {
-                var data = await response.json();
+                const data = await response.json();
                 if (data.success && typeof data.views === "object") {
                   Object.assign(result, data.views);
                   Object.assign(cachedViews, data.views);
@@ -273,10 +273,10 @@ const structuredData = {
           }
 
           uniqueSlugs.forEach(function(slug) {
-            var elements = slugToElements.get(slug);
-            var count = result[slug] ?? 0;
+            const elements = slugToElements.get(slug);
+            const count = result[slug] ?? 0;
             elements?.forEach(function(el) {
-              var countEl = el.querySelector(".count");
+              const countEl = el.querySelector(".count");
               if (countEl) {
                 countEl.textContent = formatCount(count);
               }
@@ -285,25 +285,25 @@ const structuredData = {
         };
 
         window.cleanupGiscus = function() {
-          var existingIframe = document.querySelector('iframe.giscus-frame');
+          const existingIframe = document.querySelector('iframe.giscus-frame');
           if (existingIframe) existingIframe.remove();
-          var existingScript = document.querySelector('script[data-giscus]');
+          const existingScript = document.querySelector('script[data-giscus]');
           if (existingScript) existingScript.remove();
-          var container = document.getElementById("giscus-container");
+          const container = document.getElementById("giscus-container");
           if (container) container.innerHTML = "";
         };
 
         window.loadGiscus = function() {
-          var container = document.getElementById("giscus-container");
+          const container = document.getElementById("giscus-container");
           if (!container) return;
 
           cleanupGiscus();
 
-          var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-          var baseUrl = "https://blog.kon-carol.xyz";
-          var theme = isDark ? baseUrl + "/giscus-dark.css" : baseUrl + "/giscus-light.css";
+          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          const baseUrl = "https://blog.kon-carol.xyz";
+          const theme = isDark ? baseUrl + "/giscus-dark.css" : baseUrl + "/giscus-light.css";
 
-          var script = document.createElement("script");
+          const script = document.createElement("script");
           script.src = "https://giscus.app/client.js";
           script.setAttribute("data-repo", "Carolier2003/Carols-blog");
           script.setAttribute("data-repo-id", "R_kgDOROT-5Q");

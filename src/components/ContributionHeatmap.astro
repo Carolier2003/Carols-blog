@@ -324,7 +324,7 @@ data.forEach((week, weekIndex) => {
         // Adjust if tooltip would go off screen
         const rect = tooltip.getBoundingClientRect();
         let left = x - rect.width / 2;
-        let top = y - rect.height;
+        const top = y - rect.height;
 
         if (left < 10) left = 10;
         if (left + rect.width > window.innerWidth - 10) {

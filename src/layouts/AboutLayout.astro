@@ -251,7 +251,7 @@ const { frontmatter } = Astro.props;
             // Month labels - 根据实际周数据生成
             const monthLabels = [];
             let currentMonth = null;
-            let currentYear = null;
+            const currentYear = null;
             let isFirstMonth = true; // 标记是否是第一个月
             data.weeks.forEach((week, weekIndex) => {
               // 每周的星期四是该周的代表（用于月份标签）
