@@ -13,6 +13,21 @@ export default [
       },
     },
   },
-  { rules: { "no-console": "error" } },
-  { ignores: ["dist/**", ".astro", "public/pagefind/**"] },
+  {
+    rules: {
+      "no-console": ["error", { allow: ["warn", "error", "debug", "info"] }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "after-used",
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "none",
+        },
+      ],
+    },
+  },
+  {
+    ignores: ["dist/**", ".astro", "public/pagefind/**", ".wrangler/**"],
+  },
 ];

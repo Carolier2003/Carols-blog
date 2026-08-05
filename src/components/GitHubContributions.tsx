@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from "react";
 
 interface Props {
   username: string;
@@ -6,8 +6,8 @@ interface Props {
 
 // Get navigation count from global
 const getNavCount = () => {
-  if (typeof window !== 'undefined') {
-    return (window as any).__vtNavigationCount || 0;
+  if (typeof window !== "undefined") {
+    return window.__vtNavigationCount || 0;
   }
   return 0;
 };
@@ -19,6 +19,7 @@ const processedNavCounts = new Set<number>();
 declare global {
   interface Window {
     __contributionsData?: ContributionResponse;
+    __vtNavigationCount?: number;
   }
 }
 
@@ -50,11 +51,11 @@ interface TooltipState {
 
 // API 基础地址
 const API_BASE = import.meta.env.DEV
-  ? 'http://localhost:8787'
-  : 'https://api.kon-carol.xyz';
+  ? "http://localhost:8787"
+  : "https://api.kon-carol.xyz";
 
 // Simple SVG-based contribution heatmap component
-export default function GitHubContributions({ username }: Props) {
+export default function GitHubContributions({ username: _username }: Props) {
   // Use navigation count as key to force remount on View Transitions
   const [navKey, setNavKey] = useState(getNavCount());
   const [weeks, setWeeks] = useState<ContributionDay[][]>([]);
@@ -69,50 +70,53 @@ export default function GitHubContributions({ username }: Props) {
     visible: false,
     x: 0,
     y: 0,
-    date: '',
+    date: "",
     count: 0,
     githubCount: 0,
     gitcodeCount: 0,
   });
 
-  const fetchContributions = useCallback(async (force = false) => {
-    // Prevent duplicate fetches unless forced
-    if (!force && weeks.length > 0) return;
+  const _fetchContributions = useCallback(
+    async (force = false) => {
+      // Prevent duplicate fetches unless forced
+      if (!force && weeks.length > 0) return;
 
-    try {
-      setLoading(true);
-      setError(null);
+      try {
+        setLoading(true);
+        setError(null);
 
-      const response = await fetch(`${API_BASE}/api/contributions`);
+        const response = await fetch(`${API_BASE}/api/contributions`);
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to fetch contributions");
+        }
+
+        const data = result.data as ContributionResponse;
+
+        setWeeks(data.weeks);
+        setStats({
+          total: data.total,
+          github: data.githubTotal,
+          gitcode: data.gitcodeTotal,
+        });
+      } catch (err) {
+        console.error("Failed to fetch contributions:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+        // 降级到模拟数据
+        setWeeks(generateMockData());
+        setStats({ total: 0, github: 0, gitcode: 0 });
+      } finally {
+        setLoading(false);
       }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch contributions');
-      }
-
-      const data = result.data as ContributionResponse;
-
-      setWeeks(data.weeks);
-      setStats({
-        total: data.total,
-        github: data.githubTotal,
-        gitcode: data.gitcodeTotal,
-      });
-    } catch (err) {
-      console.error('Failed to fetch contributions:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      // 降级到模拟数据
-      setWeeks(generateMockData());
-      setStats({ total: 0, github: 0, gitcode: 0 });
-    } finally {
-      setLoading(false);
-    }
-  }, [weeks.length]);
+    },
+    [weeks.length]
+  );
 
   // Handle initial load and View Transitions
   useEffect(() => {
@@ -149,7 +153,7 @@ export default function GitHubContributions({ username }: Props) {
           }
         })
         .catch(err => {
-          console.error('Failed to fetch contributions:', err);
+          console.error("Failed to fetch contributions:", err);
           setError(err.message);
           setWeeks(generateMockData());
           setLoading(false);
@@ -161,27 +165,30 @@ export default function GitHubContributions({ username }: Props) {
       loadData(e.detail as ContributionResponse);
     };
 
-    document.addEventListener('contributions:data-loaded', handleDataLoaded as EventListener);
+    document.addEventListener(
+      "contributions:data-loaded",
+      handleDataLoaded as EventListener
+    );
 
     return () => {
-      document.removeEventListener('contributions:data-loaded', handleDataLoaded as EventListener);
+      document.removeEventListener(
+        "contributions:data-loaded",
+        handleDataLoaded as EventListener
+      );
     };
   }, []);
 
   // Format date for display
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
-  const handleMouseEnter = (
-    e: React.MouseEvent,
-    day: ContributionDay
-  ) => {
+  const handleMouseEnter = (e: React.MouseEvent, day: ContributionDay) => {
     setTooltip({
       visible: true,
       x: e.clientX,
@@ -194,7 +201,7 @@ export default function GitHubContributions({ username }: Props) {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    setTooltip((prev) => ({
+    setTooltip(prev => ({
       ...prev,
       x: e.clientX,
       y: e.clientY - 10,
@@ -202,66 +209,72 @@ export default function GitHubContributions({ username }: Props) {
   };
 
   const handleMouseLeave = () => {
-    setTooltip((prev) => ({ ...prev, visible: false }));
+    setTooltip(prev => ({ ...prev, visible: false }));
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="inline-block w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-        <p className="mt-2 text-sm text-foreground/60">Loading contributions...</p>
+      <div className="py-8 text-center">
+        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+        <p className="mt-2 text-sm text-foreground/60">
+          Loading contributions...
+        </p>
       </div>
     );
   }
 
   const getColor = (level: number, isDark: boolean) => {
-    if (level === 0) return isDark ? '#2d333b' : '#ebedf0';
+    if (level === 0) return isDark ? "#2d333b" : "#ebedf0";
     if (isDark) {
       const colors = [
-        '',
-        'rgba(255, 107, 1, 0.3)',
-        'rgba(255, 107, 1, 0.5)',
-        'rgba(255, 107, 1, 0.75)',
-        'rgb(255, 107, 1)',
+        "",
+        "rgba(255, 107, 1, 0.3)",
+        "rgba(255, 107, 1, 0.5)",
+        "rgba(255, 107, 1, 0.75)",
+        "rgb(255, 107, 1)",
       ];
       return colors[level];
     } else {
       const colors = [
-        '',
-        'rgba(0, 108, 172, 0.3)',
-        'rgba(0, 108, 172, 0.5)',
-        'rgba(0, 108, 172, 0.75)',
-        'rgb(0, 108, 172)',
+        "",
+        "rgba(0, 108, 172, 0.3)",
+        "rgba(0, 108, 172, 0.5)",
+        "rgba(0, 108, 172, 0.75)",
+        "rgb(0, 108, 172)",
       ];
       return colors[level];
     }
   };
 
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
   const cellSize = 10;
   const cellGap = 3;
 
   return (
-    <div key={navKey} className="github-contributions overflow-x-auto flex flex-col items-center relative">
+    <div
+      key={navKey}
+      className="github-contributions relative flex flex-col items-center overflow-x-auto"
+    >
       {/* Hidden div to track VT navigation */}
-      <div data-vt-count={navKey} style={{ display: 'none' }} />
+      <div data-vt-count={navKey} style={{ display: "none" }} />
       {/* Stats summary */}
-      <div className="flex items-center gap-4 mb-4 text-xs text-foreground/60">
+      <div className="mb-4 flex items-center gap-4 text-xs text-foreground/60">
         <span>
-          <strong className="text-foreground">{stats.total}</strong> contributions in the last year
+          <strong className="text-foreground">{stats.total}</strong>{" "}
+          contributions in the last year
         </span>
         {stats.github > 0 && (
           <span className="hidden sm:inline">
@@ -278,8 +291,8 @@ export default function GitHubContributions({ username }: Props) {
 
       <svg
         viewBox={`0 0 ${52 * (cellSize + cellGap) + 20} ${7 * (cellSize + cellGap) + 30}`}
-        className="w-full min-w-[700px] mx-auto"
-        style={{ maxWidth: '100%' }}
+        className="mx-auto w-full min-w-[700px]"
+        style={{ maxWidth: "100%" }}
       >
         {/* Month labels */}
         {months.map((month, i) => (
@@ -308,7 +321,7 @@ export default function GitHubContributions({ username }: Props) {
               fill={getColor(day.level, false)}
               className={`contribution-cell level-${day.level} cursor-pointer`}
               data-level={day.level}
-              onMouseEnter={(e) => handleMouseEnter(e, day)}
+              onMouseEnter={e => handleMouseEnter(e, day)}
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             />
@@ -317,12 +330,12 @@ export default function GitHubContributions({ username }: Props) {
       </svg>
 
       {/* Legend */}
-      <div className="flex items-center justify-end gap-2 mt-4 text-xs opacity-50">
+      <div className="mt-4 flex items-center justify-end gap-2 text-xs opacity-50">
         <span>Less</span>
-        {[0, 1, 2, 3, 4].map((level) => (
+        {[0, 1, 2, 3, 4].map(level => (
           <div
             key={level}
-            className={`w-3 h-3 rounded-sm contribution-cell level-${level}`}
+            className={`contribution-cell h-3 w-3 rounded-sm level-${level}`}
             style={{ backgroundColor: getColor(level, false) }}
           />
         ))}
@@ -332,21 +345,21 @@ export default function GitHubContributions({ username }: Props) {
       {/* Tooltip */}
       {tooltip.visible && (
         <div
-          className="fixed z-50 px-3 py-2 text-xs rounded-md shadow-lg pointer-events-none"
+          className="pointer-events-none fixed z-50 rounded-md px-3 py-2 text-xs shadow-lg"
           style={{
             left: tooltip.x,
             top: tooltip.y,
-            transform: 'translate(-50%, -100%)',
-            backgroundColor: 'var(--background, #fff)',
-            border: '1px solid var(--border, #e1e4e8)',
-            color: 'var(--foreground, #24292e)',
+            transform: "translate(-50%, -100%)",
+            backgroundColor: "var(--background, #fff)",
+            border: "1px solid var(--border, #e1e4e8)",
+            color: "var(--foreground, #24292e)",
           }}
         >
           <div className="font-semibold">
             {tooltip.count === 0
-              ? 'No contributions'
+              ? "No contributions"
               : tooltip.count === 1
-                ? '1 contribution'
+                ? "1 contribution"
                 : `${tooltip.count} contributions`}
           </div>
           {(tooltip.githubCount > 0 || tooltip.gitcodeCount > 0) && (
@@ -393,10 +406,11 @@ function generateMockData(): ContributionDay[][] {
     for (let d = 0; d < 7; d++) {
       const date = new Date(today);
       date.setDate(today.getDate() - (52 - w) * 7 + d);
-      const count = Math.random() > 0.6 ? Math.floor(Math.random() * 12) + 1 : 0;
+      const count =
+        Math.random() > 0.6 ? Math.floor(Math.random() * 12) + 1 : 0;
 
       week.push({
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split("T")[0],
         count,
         githubCount: count,
         gitcodeCount: 0,

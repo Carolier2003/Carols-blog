@@ -3,7 +3,6 @@ import type { MarkdownLayoutProps } from "astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Breadcrumb from "@/components/Breadcrumb.astro";
-import GitHubContributions from "@/components/GitHubContributions.tsx";
 // import ContributionHeatmap from "@/components/ContributionHeatmap.astro";
 import Layout from "./Layout.astro";
 import { SITE } from "@/config";
@@ -19,30 +18,30 @@ const { frontmatter } = Astro.props;
   <main id="main-content" class="app-layout">
     <section id="about" class="app-prose mb-28 max-w-app prose-img:border-0">
       <!-- Profile Header -->
-      <div class="flex flex-col items-center mb-8 text-center">
+      <div class="mb-8 flex flex-col items-center text-center">
         <!-- Avatar - 本地静态资源，最优加载性能 -->
         <a
           href="https://github.com/Carolier2003"
           target="_blank"
           rel="noopener noreferrer"
-          class="block transition-transform hover:scale-105 mb-1"
+          class="mb-1 block transition-transform hover:scale-105"
         >
           <img
             src="/avatar.png"
             alt="Carol"
             width="100"
             height="100"
-            class="rounded-full border-2 border-border shadow-md my-0"
+            class="my-0 rounded-full border-2 border-border shadow-md"
             loading="eager"
             fetchpriority="high"
           />
         </a>
 
         <!-- Name -->
-        <h2 class="text-xl font-bold mb-1 mt-0">Carol</h2>
+        <h2 class="mt-0 mb-1 text-xl font-bold">Carol</h2>
 
         <!-- Subtitle -->
-        <p class="text-foreground/70 text-sm mb-3">
+        <p class="mb-3 text-sm text-foreground/70">
           Java 后端工程师 · 终身学习者
         </p>
 
@@ -52,21 +51,39 @@ const { frontmatter } = Astro.props;
             href="https://github.com/Carolier2003"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-foreground/60 hover:text-accent transition-colors"
+            class="text-foreground/60 transition-colors hover:text-accent"
             title="GitHub"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path
+                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+              ></path>
             </svg>
           </a>
           <a
             href="mailto:jianjiale2003@gmail.com"
-            class="text-foreground/60 hover:text-accent transition-colors"
+            class="text-foreground/60 transition-colors hover:text-accent"
             title="Email"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="20" height="16" x="2" y="4" rx="2"/>
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
             </svg>
           </a>
         </div>
@@ -77,62 +94,106 @@ const { frontmatter } = Astro.props;
         <!-- Skeleton Screen -->
         <div id="contributions-skeleton" class="contribution-wrapper">
           <!-- Stats skeleton -->
-          <div class="flex items-center gap-4 mb-4">
-            <div class="h-4 w-48 bg-foreground/10 rounded animate-pulse"></div>
-            <div class="h-4 w-24 bg-foreground/10 rounded animate-pulse hidden sm:block"></div>
-            <div class="h-4 w-24 bg-foreground/10 rounded animate-pulse hidden sm:block"></div>
+          <div class="mb-4 flex items-center gap-4">
+            <div class="h-4 w-48 animate-pulse rounded bg-foreground/10"></div>
+            <div
+              class="hidden h-4 w-24 animate-pulse rounded bg-foreground/10 sm:block"
+            >
+            </div>
+            <div
+              class="hidden h-4 w-24 animate-pulse rounded bg-foreground/10 sm:block"
+            >
+            </div>
           </div>
           <!-- Heatmap skeleton -->
           <div class="heatmap-scroll-container">
             <div class="skeleton-grid">
-              {Array.from({ length: 52 }).map((_, weekIndex) => (
-                <div class="skeleton-week">
-                  {Array.from({ length: 7 }).map((_, dayIndex) => (
-                    <div class="skeleton-cell"></div>
-                  ))}
-                </div>
-              ))}
+              {
+                Array.from({ length: 52 }).map((_, _weekIndex) => (
+                  <div class="skeleton-week">
+                    {Array.from({ length: 7 }).map((_, _dayIndex) => (
+                      <div class="skeleton-cell" />
+                    ))}
+                  </div>
+                ))
+              }
             </div>
           </div>
           <!-- Legend skeleton -->
-          <div class="flex items-center justify-end gap-2 mt-4">
-            <div class="h-3 w-6 bg-foreground/10 rounded"></div>
-            {Array.from({ length: 5 }).map(() => (
-              <div class="w-3 h-3 rounded-sm bg-foreground/10"></div>
-            ))}
-            <div class="h-3 w-6 bg-foreground/10 rounded"></div>
+          <div class="mt-4 flex items-center justify-end gap-2">
+            <div class="h-3 w-6 rounded bg-foreground/10"></div>
+            {
+              Array.from({ length: 5 }).map(() => (
+                <div class="h-3 w-3 rounded-sm bg-foreground/10" />
+              ))
+            }
+            <div class="h-3 w-6 rounded bg-foreground/10"></div>
           </div>
         </div>
 
         <!-- Loading indicator (hidden by default, shown on error retry) -->
-        <div id="contributions-loading" class="text-center py-8" style="display: none;">
-          <div class="inline-block w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin"></div>
-          <p class="mt-2 text-sm text-foreground/60">Loading contributions...</p>
+        <div
+          id="contributions-loading"
+          class="py-8 text-center"
+          style="display: none;"
+        >
+          <div
+            class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent/30 border-t-accent"
+          >
+          </div>
+          <p class="mt-2 text-sm text-foreground/60">
+            Loading contributions...
+          </p>
         </div>
 
         <!-- Error message (hidden by default) -->
-        <div id="contributions-error" class="text-center py-8" style="display: none;">
-          <p class="text-amber-500 text-sm">Failed to load contributions</p>
-          <button id="retry-btn" class="mt-2 px-3 py-1 text-xs bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors">
+        <div
+          id="contributions-error"
+          class="py-8 text-center"
+          style="display: none;"
+        >
+          <p class="text-sm text-amber-500">Failed to load contributions</p>
+          <button
+            id="retry-btn"
+            class="mt-2 rounded bg-accent/10 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/20"
+          >
             Retry
           </button>
         </div>
 
-        <div id="contributions-content" style="display: none;" class="contribution-wrapper">
+        <div
+          id="contributions-content"
+          style="display: none;"
+          class="contribution-wrapper"
+        >
           <!-- Stats -->
-          <div class="flex items-center gap-4 mb-4 text-xs text-foreground/60">
-            <span><strong class="text-foreground" id="contrib-total">0</strong> contributions in the last year</span>
-            <span class="hidden sm:inline">GitHub: <strong id="contrib-github">0</strong></span>
-            <span class="hidden sm:inline">GitCode: <strong id="contrib-gitcode">0</strong></span>
+          <div class="mb-4 flex items-center gap-4 text-xs text-foreground/60">
+            <span
+              ><strong class="text-foreground" id="contrib-total">0</strong> contributions
+              in the last year</span
+            >
+            <span class="hidden sm:inline"
+              >GitHub: <strong id="contrib-github">0</strong></span
+            >
+            <span class="hidden sm:inline"
+              >GitCode: <strong id="contrib-gitcode">0</strong></span
+            >
           </div>
           <!-- SVG Heatmap -->
           <div class="heatmap-scroll-container">
-            <svg id="contrib-svg" viewBox="0 0 740 121" preserveAspectRatio="xMidYMid meet">
+            <svg
+              id="contrib-svg"
+              viewBox="0 0 740 121"
+              preserveAspectRatio="xMidYMid meet"
+            >
               <!-- Month labels and cells will be inserted here -->
             </svg>
           </div>
           <!-- Legend (动态渲染以适配主题) -->
-          <div id="contrib-legend" class="flex items-center justify-end gap-2 mt-4 text-xs text-foreground/50">
+          <div
+            id="contrib-legend"
+            class="mt-4 flex items-center justify-end gap-2 text-xs text-foreground/50"
+          >
             <span>Less</span>
             <span>More</span>
           </div>
@@ -147,35 +208,59 @@ const { frontmatter } = Astro.props;
       </div>
 
       <script is:inline>
-        (function() {
-          const API_BASE = location.hostname === 'localhost' ? 'http://localhost:8787' : 'https://api.kon-carol.xyz';
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        (function () {
+          const API_BASE =
+            location.hostname === "localhost"
+              ? "http://localhost:8787"
+              : "https://api.kon-carol.xyz";
+          const months = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
           const cellSize = 10;
           const cellGap = 3;
 
           // Tooltip element
-          const tooltip = document.getElementById('contrib-tooltip');
+          const tooltip = document.getElementById("contrib-tooltip");
 
           function getColor(level, isDark) {
-            if (level === 0) return isDark ? '#2d333b' : '#ebedf0';
+            if (level === 0) return isDark ? "#2d333b" : "#ebedf0";
             // 深色模式使用橙色，浅色模式使用蓝色
-            const colors = isDark ? ['',
-              'rgba(255, 107, 1, 0.3)',
-              'rgba(255, 107, 1, 0.5)',
-              'rgba(255, 107, 1, 0.75)',
-              'rgb(255, 107, 1)'
-            ] : ['',
-              'rgba(0, 108, 172, 0.3)',
-              'rgba(0, 108, 172, 0.5)',
-              'rgba(0, 108, 172, 0.75)',
-              'rgb(0, 108, 172)'
-            ];
-            return colors[level] || '#ebedf0';
+            const colors = isDark
+              ? [
+                  "",
+                  "rgba(255, 107, 1, 0.3)",
+                  "rgba(255, 107, 1, 0.5)",
+                  "rgba(255, 107, 1, 0.75)",
+                  "rgb(255, 107, 1)",
+                ]
+              : [
+                  "",
+                  "rgba(0, 108, 172, 0.3)",
+                  "rgba(0, 108, 172, 0.5)",
+                  "rgba(0, 108, 172, 0.75)",
+                  "rgb(0, 108, 172)",
+                ];
+            return colors[level] || "#ebedf0";
           }
 
           function formatDate(dateStr) {
             const date = new Date(dateStr);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            return date.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
           }
 
           function showTooltip(e, day) {
@@ -184,17 +269,26 @@ const { frontmatter } = Astro.props;
             const gitcodeCount = day.gitcodeCount || 0;
 
             // Build tooltip content
-            const countText = count === 0 ? 'No contributions' : count === 1 ? '1 contribution' : `${count} contributions`;
-            document.getElementById('tooltip-count').textContent = countText;
+            const countText =
+              count === 0
+                ? "No contributions"
+                : count === 1
+                  ? "1 contribution"
+                  : `${count} contributions`;
+            document.getElementById("tooltip-count").textContent = countText;
 
-            let sourcesHtml = '';
+            let sourcesHtml = "";
             if (githubCount > 0 || gitcodeCount > 0) {
-              sourcesHtml = '';
-              if (githubCount > 0) sourcesHtml += `<span>GitHub: ${githubCount}</span>`;
-              if (gitcodeCount > 0) sourcesHtml += `<span>GitCode: ${gitcodeCount}</span>`;
+              sourcesHtml = "";
+              if (githubCount > 0)
+                sourcesHtml += `<span>GitHub: ${githubCount}</span>`;
+              if (gitcodeCount > 0)
+                sourcesHtml += `<span>GitCode: ${gitcodeCount}</span>`;
             }
-            document.getElementById('tooltip-sources').innerHTML = sourcesHtml;
-            document.getElementById('tooltip-date').textContent = formatDate(day.date);
+            document.getElementById("tooltip-sources").innerHTML = sourcesHtml;
+            document.getElementById("tooltip-date").textContent = formatDate(
+              day.date
+            );
 
             // Position tooltip
             const rect = e.target.getBoundingClientRect();
@@ -212,46 +306,51 @@ const { frontmatter } = Astro.props;
               top = rect.bottom + 8;
             }
 
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-            tooltip.classList.add('visible');
+            tooltip.style.left = left + "px";
+            tooltip.style.top = top + "px";
+            tooltip.classList.add("visible");
           }
 
           function hideTooltip() {
-            tooltip.classList.remove('visible');
+            tooltip.classList.remove("visible");
           }
 
           function renderLegend() {
-            const legendContainer = document.getElementById('contrib-legend');
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const legendContainer = document.getElementById("contrib-legend");
+            const isDark =
+              document.documentElement.getAttribute("data-theme") === "dark";
 
-            legendContainer.innerHTML = '<span>Less</span>';
+            legendContainer.innerHTML = "<span>Less</span>";
 
             for (let level = 0; level <= 4; level++) {
-              const div = document.createElement('div');
-              div.className = 'w-3 h-3 rounded-sm';
+              const div = document.createElement("div");
+              div.className = "w-3 h-3 rounded-sm";
               div.style.backgroundColor = getColor(level, isDark);
               legendContainer.appendChild(div);
             }
 
-            legendContainer.appendChild(document.createElement('span')).textContent = 'More';
+            legendContainer.appendChild(
+              document.createElement("span")
+            ).textContent = "More";
           }
 
           function renderContributions(data) {
-            document.getElementById('contrib-total').textContent = data.total.toLocaleString();
-            document.getElementById('contrib-github').textContent = data.githubTotal.toLocaleString();
-            document.getElementById('contrib-gitcode').textContent = data.gitcodeTotal.toLocaleString();
+            document.getElementById("contrib-total").textContent =
+              data.total.toLocaleString();
+            document.getElementById("contrib-github").textContent =
+              data.githubTotal.toLocaleString();
+            document.getElementById("contrib-gitcode").textContent =
+              data.gitcodeTotal.toLocaleString();
 
             // 渲染图例
             renderLegend();
 
-            const svg = document.getElementById('contrib-svg');
-            svg.innerHTML = '';
+            const svg = document.getElementById("contrib-svg");
+            svg.innerHTML = "";
 
             // Month labels - 根据实际周数据生成
             const monthLabels = [];
             let currentMonth = null;
-            let currentYear = null;
             let isFirstMonth = true; // 标记是否是第一个月
             data.weeks.forEach((week, weekIndex) => {
               // 每周的星期四是该周的代表（用于月份标签）
@@ -271,9 +370,10 @@ const { frontmatter } = Astro.props;
                   }
 
                   // 如果是同月份但不同年份，显示缩写年份（如 Feb '26）
-                  const displayMonth = monthName === currentMonth?.split('-')[0]
-                    ? `${monthName} '${year.toString().slice(2)}`
-                    : monthName;
+                  const displayMonth =
+                    monthName === currentMonth?.split("-")[0]
+                      ? `${monthName} '${year.toString().slice(2)}`
+                      : monthName;
 
                   monthLabels.push({ month: displayMonth, weekIndex });
                   currentMonth = monthYear;
@@ -290,53 +390,66 @@ const { frontmatter } = Astro.props;
             });
 
             filteredLabels.forEach(({ month, weekIndex }) => {
-              const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-              text.setAttribute('x', 15 + weekIndex * (cellSize + cellGap));
-              text.setAttribute('y', 15);
-              text.setAttribute('font-size', 10);
-              text.setAttribute('fill', 'currentColor');
-              text.setAttribute('class', 'opacity-50');
+              const text = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "text"
+              );
+              text.setAttribute("x", 15 + weekIndex * (cellSize + cellGap));
+              text.setAttribute("y", 15);
+              text.setAttribute("font-size", 10);
+              text.setAttribute("fill", "currentColor");
+              text.setAttribute("class", "opacity-50");
               text.textContent = month;
               svg.appendChild(text);
             });
 
             // Contribution cells
-            const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+            const isDarkMode =
+              document.documentElement.getAttribute("data-theme") === "dark";
             data.weeks.forEach((week, weekIndex) => {
               week.forEach((day, dayIndex) => {
-                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                rect.setAttribute('x', 15 + weekIndex * (cellSize + cellGap));
-                rect.setAttribute('y', 25 + dayIndex * (cellSize + cellGap));
-                rect.setAttribute('width', cellSize);
-                rect.setAttribute('height', cellSize);
-                rect.setAttribute('rx', 2);
-                rect.setAttribute('fill', getColor(day.level, isDarkMode));
-                rect.setAttribute('class', 'contrib-cell');
-                rect.setAttribute('data-level', day.level);
+                const rect = document.createElementNS(
+                  "http://www.w3.org/2000/svg",
+                  "rect"
+                );
+                rect.setAttribute("x", 15 + weekIndex * (cellSize + cellGap));
+                rect.setAttribute("y", 25 + dayIndex * (cellSize + cellGap));
+                rect.setAttribute("width", cellSize);
+                rect.setAttribute("height", cellSize);
+                rect.setAttribute("rx", 2);
+                rect.setAttribute("fill", getColor(day.level, isDarkMode));
+                rect.setAttribute("class", "contrib-cell");
+                rect.setAttribute("data-level", day.level);
 
                 // Event listeners for tooltip
-                rect.addEventListener('mouseenter', (e) => showTooltip(e, day));
-                rect.addEventListener('mouseleave', hideTooltip);
+                rect.addEventListener("mouseenter", e => showTooltip(e, day));
+                rect.addEventListener("mouseleave", hideTooltip);
 
                 svg.appendChild(rect);
               });
             });
 
-            document.getElementById('contributions-skeleton').style.display = 'none';
-            document.getElementById('contributions-error').style.display = 'none';
-            document.getElementById('contributions-content').style.display = 'flex';
+            document.getElementById("contributions-skeleton").style.display =
+              "none";
+            document.getElementById("contributions-error").style.display =
+              "none";
+            document.getElementById("contributions-content").style.display =
+              "flex";
           }
 
           async function fetchContributions() {
             // Check cache first
-            const cached = sessionStorage.getItem('contributions');
+            const cached = sessionStorage.getItem("contributions");
             let hasStaleData = false;
 
             if (cached) {
               try {
                 const data = JSON.parse(cached);
                 // Use stale data immediately (up to 24 hours old)
-                if (data.cachedAt && Date.now() - data.cachedAt < 24 * 60 * 60 * 1000) {
+                if (
+                  data.cachedAt &&
+                  Date.now() - data.cachedAt < 24 * 60 * 60 * 1000
+                ) {
                   renderContributions(data);
                   hasStaleData = true;
 
@@ -352,10 +465,13 @@ const { frontmatter } = Astro.props;
 
             // Only show skeleton if no stale data to display
             if (!hasStaleData) {
-              document.getElementById('contributions-skeleton').style.display = 'flex';
-              document.getElementById('contributions-content').style.display = 'none';
+              document.getElementById("contributions-skeleton").style.display =
+                "flex";
+              document.getElementById("contributions-content").style.display =
+                "none";
             }
-            document.getElementById('contributions-error').style.display = 'none';
+            document.getElementById("contributions-error").style.display =
+              "none";
 
             try {
               const response = await fetch(`${API_BASE}/api/contributions`);
@@ -367,11 +483,15 @@ const { frontmatter } = Astro.props;
                   if (cached) {
                     try {
                       const oldData = JSON.parse(cached);
-                      const oldLastDate = oldData.weeks[oldData.weeks.length - 1]?.[6]?.date;
-                      const newLastDate = result.data.weeks[result.data.weeks.length - 1]?.[6]?.date;
-                      dataChanged = oldData.total !== result.data.total ||
-                                    oldLastDate !== newLastDate ||
-                                    oldData.weeks.length !== result.data.weeks.length;
+                      const oldLastDate =
+                        oldData.weeks[oldData.weeks.length - 1]?.[6]?.date;
+                      const newLastDate =
+                        result.data.weeks[result.data.weeks.length - 1]?.[6]
+                          ?.date;
+                      dataChanged =
+                        oldData.total !== result.data.total ||
+                        oldLastDate !== newLastDate ||
+                        oldData.weeks.length !== result.data.weeks.length;
                     } catch (e) {
                       dataChanged = true;
                     }
@@ -379,7 +499,10 @@ const { frontmatter } = Astro.props;
 
                   // Update cache
                   result.data.cachedAt = Date.now();
-                  sessionStorage.setItem('contributions', JSON.stringify(result.data));
+                  sessionStorage.setItem(
+                    "contributions",
+                    JSON.stringify(result.data)
+                  );
 
                   // Re-render if no cached data or data changed
                   if (!hasStaleData || dataChanged) {
@@ -388,7 +511,7 @@ const { frontmatter } = Astro.props;
                 }
               }
             } catch (err) {
-              console.error('Failed to fetch contributions:', err);
+              console.error("Failed to fetch contributions:", err);
               // Don't show error if we have stale data
               if (!hasStaleData) {
                 showError();
@@ -397,14 +520,18 @@ const { frontmatter } = Astro.props;
           }
 
           function showError() {
-            document.getElementById('contributions-skeleton').style.display = 'none';
-            document.getElementById('contributions-error').style.display = 'block';
+            document.getElementById("contributions-skeleton").style.display =
+              "none";
+            document.getElementById("contributions-error").style.display =
+              "block";
           }
 
           // Retry button handler
-          document.getElementById('retry-btn').addEventListener('click', fetchContributions);
+          document
+            .getElementById("retry-btn")
+            .addEventListener("click", fetchContributions);
 
-          function renderMockData() {
+          function _renderMockData() {
             // Generate mock data for fallback
             const weeks = [];
             const today = new Date();
@@ -413,34 +540,49 @@ const { frontmatter } = Astro.props;
               for (let d = 0; d < 7; d++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - (52 - w) * 7 + d);
-                const count = Math.random() > 0.6 ? Math.floor(Math.random() * 12) + 1 : 0;
-                const level = count === 0 ? 0 : count <= 3 ? 1 : count <= 6 ? 2 : count <= 9 ? 3 : 4;
+                const count =
+                  Math.random() > 0.6 ? Math.floor(Math.random() * 12) + 1 : 0;
+                const level =
+                  count === 0
+                    ? 0
+                    : count <= 3
+                      ? 1
+                      : count <= 6
+                        ? 2
+                        : count <= 9
+                          ? 3
+                          : 4;
                 week.push({
-                  date: date.toISOString().split('T')[0],
+                  date: date.toISOString().split("T")[0],
                   count,
                   githubCount: count,
                   gitcodeCount: 0,
-                  level
+                  level,
                 });
               }
               weeks.push(week);
             }
             const total = weeks.flat().reduce((sum, d) => sum + d.count, 0);
-            renderContributions({ weeks, total, githubTotal: total, gitcodeTotal: 0 });
+            renderContributions({
+              weeks,
+              total,
+              githubTotal: total,
+              gitcodeTotal: 0,
+            });
           }
 
           // Fetch immediately
           fetchContributions();
 
           // Also fetch on View Transitions
-          document.addEventListener('astro:page-load', fetchContributions);
+          document.addEventListener("astro:page-load", fetchContributions);
 
           // Listen for theme changes and re-render heatmap
-          const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-              if (mutation.attributeName === 'data-theme') {
+          const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+              if (mutation.attributeName === "data-theme") {
                 // Re-render entire heatmap with new theme colors
-                const cached = sessionStorage.getItem('contributions');
+                const cached = sessionStorage.getItem("contributions");
                 if (cached) {
                   try {
                     const data = JSON.parse(cached);
@@ -551,7 +693,8 @@ const { frontmatter } = Astro.props;
     }
 
     @keyframes skeleton-pulse {
-      0%, 100% {
+      0%,
+      100% {
         opacity: 0.1;
       }
       50% {
@@ -569,12 +712,14 @@ const { frontmatter } = Astro.props;
       padding: 8px 12px;
       font-size: 12px;
       color: var(--foreground, #24292e);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       pointer-events: none;
       white-space: nowrap;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.15s ease, visibility 0.15s ease;
+      transition:
+        opacity 0.15s ease,
+        visibility 0.15s ease;
     }
 
     .contrib-tooltip.visible {
@@ -628,7 +773,8 @@ const { frontmatter } = Astro.props;
     }
 
     [data-theme="dark"] @keyframes skeleton-pulse {
-      0%, 100% {
+      0%,
+      100% {
         opacity: 0.08;
       }
       50% {
