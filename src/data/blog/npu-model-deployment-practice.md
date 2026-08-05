@@ -74,10 +74,10 @@ Try increasing gpu_memory_utilization or decreasing max_model_len.
 
 **两个关键决策点：**
 
-| 决策点 | 选项 A | 选项 B |
-| ------ | ------ | ------ |
-| **部署框架** | vLLM（高性能、高并发） | Transformers（稳定、兼容性好） |
-| **上下文长度** | 按模型默认（可能 OOM） | 限制 4k-8k（推荐） |
+| 决策点         | 选项 A                 | 选项 B                         |
+| -------------- | ---------------------- | ------------------------------ |
+| **部署框架**   | vLLM（高性能、高并发） | Transformers（稳定、兼容性好） |
+| **上下文长度** | 按模型默认（可能 OOM） | 限制 4k-8k（推荐）             |
 
 看起来简单对吧？但魔鬼藏在细节里。接下来，让我告诉你这六个步骤里，我是怎么一步步掉进坑里的。
 
@@ -104,13 +104,13 @@ model.to("cuda")                 # RuntimeError: Invalid device
 
 ## 部署概览
 
-| 模型 | 参数 | 架构 | 部署方式 | NPU 设备 | 端口 | 耗时 |
-| ---- | ---- | ---- | -------- | -------- | ---- | ---- |
-| **Qwen3-4B-Instruct** | 4B | Qwen3ForCausalLM | vLLM | davinci6 | 18006 | 半天 |
-| **QED-Nano** | 2.5B | Qwen3ForCausalLM | vLLM | davinci5 | 18005 | 2 小时 |
-| **Nanbeige4.1-3B** | 3B | - | vLLM | davinci3 | 18003 | 1 小时 |
-| **Eva-4B-V2** | 4B | Qwen3ForCausalLM | Transformers | davinci6 | 18006 | 2 天 |
-| **GLM-OCR** | 1.3B | GlmOcrForConditionalGeneration | Transformers | davinci4 | 18004 | 3 天 |
+| 模型                  | 参数 | 架构                           | 部署方式     | NPU 设备 | 端口  | 耗时   |
+| --------------------- | ---- | ------------------------------ | ------------ | -------- | ----- | ------ |
+| **Qwen3-4B-Instruct** | 4B   | Qwen3ForCausalLM               | vLLM         | davinci6 | 18006 | 半天   |
+| **QED-Nano**          | 2.5B | Qwen3ForCausalLM               | vLLM         | davinci5 | 18005 | 2 小时 |
+| **Nanbeige4.1-3B**    | 3B   | -                              | vLLM         | davinci3 | 18003 | 1 小时 |
+| **Eva-4B-V2**         | 4B   | Qwen3ForCausalLM               | Transformers | davinci6 | 18006 | 2 天   |
+| **GLM-OCR**           | 1.3B | GlmOcrForConditionalGeneration | Transformers | davinci4 | 18004 | 3 天   |
 
 从表格能看出来：**越往后越难**。前三个用 vLLM 顺风顺水，后两个差点让我怀疑人生。
 
@@ -198,10 +198,10 @@ vllm serve /data/model/QED-Nano \
   --gpu-memory-utilization 0.95   # 再压榨一下显存
 ```
 
-| 参数 | 模型支持 | 实际部署 | 原因 |
-|------|---------|---------|------|
-| max-model-len | 262k | 8k | NPU 内存限制 |
-| gpu-memory-utilization | 0.9 | 0.95 | 提高内存使用效率 |
+| 参数                   | 模型支持 | 实际部署 | 原因             |
+| ---------------------- | -------- | -------- | ---------------- |
+| max-model-len          | 262k     | 8k       | NPU 内存限制     |
+| gpu-memory-utilization | 0.9      | 0.95     | 提高内存使用效率 |
 
 **经验：** 长上下文模型必须限制 `max-model-len`，根据 NPU 内存和模型大小调整。推荐 4k-8k，既能满足大部分场景，又不会 OOM。
 
@@ -227,10 +227,10 @@ NNAL 是华为昇腾的神经网络加速库，vLLM-ascend 底层依赖它。但
 
 我面临两个选择：
 
-| 方案 | 优点 | 缺点 | 风险 |
-| ---- | ---- | ---- | ---- |
-| 升级服务器 NNAL | 保持 vLLM 高性能 | 需要运维介入，可能影响其他服务 | 高 |
-| **改用 Transformers** | **稳定，无额外依赖** | 并发能力较弱 | **低** |
+| 方案                  | 优点                 | 缺点                           | 风险   |
+| --------------------- | -------------------- | ------------------------------ | ------ |
+| 升级服务器 NNAL       | 保持 vLLM 高性能     | 需要运维介入，可能影响其他服务 | 高     |
+| **改用 Transformers** | **稳定，无额外依赖** | 并发能力较弱                   | **低** |
 
 Eva-4B-V2 是一个**财务电话会议 Q&A 回避性回答检测模型**，本质上是分类任务，不需要高并发生成。Transformers 完全够用。
 
@@ -327,11 +327,11 @@ model = AutoModel.from_pretrained(
 
 **1. Gunicorn worker 选择**
 
-| Worker 类型 | 结果 | 原因 |
-| ----------- | ---- | ---- |
-| sync | ❌ 无法流式 | 阻塞式处理 |
-| gevent | ❌ CANN 报错 | 与 TBE 编译器的 multiprocessing 冲突 |
-| **gthread** | ✅ 正常工作 | 线程模式，兼容 CANN |
+| Worker 类型 | 结果         | 原因                                 |
+| ----------- | ------------ | ------------------------------------ |
+| sync        | ❌ 无法流式  | 阻塞式处理                           |
+| gevent      | ❌ CANN 报错 | 与 TBE 编译器的 multiprocessing 冲突 |
+| **gthread** | ✅ 正常工作  | 线程模式，兼容 CANN                  |
 
 ```bash
 gunicorn \
@@ -411,11 +411,11 @@ docker run \
   ...
 ```
 
-| 物理 NPU | 宿主机设备 | 容器内设备 ID | 环境变量值 |
-|---------|-----------|--------------|-----------|
-| davinci6 | /dev/davinci6 | 0 | 0 |
-| davinci5 | /dev/davinci5 | 0 | 0 |
-| davinci4 | /dev/davinci4 | 0 | 0 |
+| 物理 NPU | 宿主机设备    | 容器内设备 ID | 环境变量值 |
+| -------- | ------------- | ------------- | ---------- |
+| davinci6 | /dev/davinci6 | 0             | 0          |
+| davinci5 | /dev/davinci5 | 0             | 0          |
+| davinci4 | /dev/davinci4 | 0             | 0          |
 
 ### 驱动库挂载完整性
 

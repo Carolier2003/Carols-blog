@@ -10,22 +10,22 @@ const generateData = () => {
   const data = [];
   const today = new Date();
   const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - (weeks * 7));
+  startDate.setDate(startDate.getDate() - weeks * 7);
 
   for (let week = 0; week < weeks; week++) {
     const weekData = [];
     for (let day = 0; day < daysPerWeek; day++) {
       const date = new Date(startDate);
-      date.setDate(date.getDate() + (week * 7) + day);
+      date.setDate(date.getDate() + week * 7 + day);
 
       // Random contribution level: 0-4
       // 0 = no contribution, 4 = high contribution
       const level = Math.random() > 0.6 ? Math.floor(Math.random() * 4) + 1 : 0;
 
       weekData.push({
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split("T")[0],
         level,
-        count: level * Math.floor(Math.random() * 3 + 1)
+        count: level * Math.floor(Math.random() * 3 + 1),
       });
     }
     data.push(weekData);
@@ -40,7 +40,20 @@ const data = generateData();
 const monthLabels: { month: string; weekIndex: number }[] = [];
 const seenMonths = new Set<number>();
 
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 data.forEach((week, weekIndex) => {
   // Check the first day of the week
@@ -52,7 +65,7 @@ data.forEach((week, weekIndex) => {
     seenMonths.add(month);
     monthLabels.push({
       month: monthNames[month],
-      weekIndex
+      weekIndex,
     });
   }
 });
@@ -63,34 +76,38 @@ data.forEach((week, weekIndex) => {
     <div class="heatmap-grid">
       <!-- Month labels - positioned above first week of each month -->
       <div class="heatmap-months">
-        {monthLabels.map((label, index) => {
-          const isFirst = index === 0;
-          const isLast = index === monthLabels.length - 1;
-          return (
-            <span
-              class={`month-label ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}`}
-              style={`left: ${label.weekIndex * (0.75 + 0.25)}rem`}
-            >
-              {label.month}
-            </span>
-          );
-        })}
+        {
+          monthLabels.map((label, index) => {
+            const isFirst = index === 0;
+            const isLast = index === monthLabels.length - 1;
+            return (
+              <span
+                class={`month-label ${isFirst ? "first" : ""} ${isLast ? "last" : ""}`}
+                style={`left: ${label.weekIndex * (0.75 + 0.25)}rem`}
+              >
+                {label.month}
+              </span>
+            );
+          })
+        }
       </div>
 
       <!-- Heatmap squares -->
       <div class="heatmap-squares">
-        {data.map((week) => (
-          <div class="heatmap-week">
-            {week.map((day) => (
-              <div
-                class={`heatmap-day level-${day.level}`}
-                title={`${day.date}: ${day.count} contributions`}
-                data-date={day.date}
-                data-count={day.count}
-              />
-            ))}
-          </div>
-        ))}
+        {
+          data.map(week => (
+            <div class="heatmap-week">
+              {week.map(day => (
+                <div
+                  class={`heatmap-day level-${day.level}`}
+                  title={`${day.date}: ${day.count} contributions`}
+                  data-date={day.date}
+                  data-count={day.count}
+                />
+              ))}
+            </div>
+          ))
+        }
       </div>
     </div>
   </div>
@@ -99,11 +116,11 @@ data.forEach((week, weekIndex) => {
   <div class="heatmap-legend">
     <span class="text-xs text-foreground/50">Less</span>
     <div class="legend-squares">
-      <div class="legend-square level-0" />
-      <div class="legend-square level-1" />
-      <div class="legend-square level-2" />
-      <div class="legend-square level-3" />
-      <div class="legend-square level-4" />
+      <div class="legend-square level-0"></div>
+      <div class="legend-square level-1"></div>
+      <div class="legend-square level-2"></div>
+      <div class="legend-square level-3"></div>
+      <div class="legend-square level-4"></div>
     </div>
     <span class="text-xs text-foreground/50">More</span>
   </div>
@@ -268,12 +285,12 @@ data.forEach((week, weekIndex) => {
 
 <script>
   // Add tooltip functionality
-  document.addEventListener('DOMContentLoaded', () => {
-    const days = document.querySelectorAll('.heatmap-day');
+  document.addEventListener("DOMContentLoaded", () => {
+    const days = document.querySelectorAll(".heatmap-day");
 
     // Create tooltip element
-    const tooltip = document.createElement('div');
-    tooltip.className = 'heatmap-tooltip';
+    const tooltip = document.createElement("div");
+    tooltip.className = "heatmap-tooltip";
     tooltip.style.cssText = `
       position: absolute;
       background: var(--background, #fff);
@@ -293,29 +310,32 @@ data.forEach((week, weekIndex) => {
     document.body.appendChild(tooltip);
 
     days.forEach(day => {
-      day.addEventListener('mouseenter', (e) => {
+      day.addEventListener("mouseenter", e => {
         const target = e.target as HTMLElement;
-        const date = target.dataset.date || '';
-        const count = parseInt(target.dataset.count || '0', 10);
+        const date = target.dataset.date || "";
+        const count = parseInt(target.dataset.count || "0", 10);
 
         // Format date: "Feb 14, 2026"
         const dateObj = new Date(date);
-        const formattedDate = dateObj.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
+        const formattedDate = dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
         });
 
         // Format contribution text
-        const contributionText = count === 0 ? 'No contributions' :
-                                 count === 1 ? '1 contribution' :
-                                 `${count} contributions`;
+        const contributionText =
+          count === 0
+            ? "No contributions"
+            : count === 1
+              ? "1 contribution"
+              : `${count} contributions`;
 
         tooltip.innerHTML = `<strong>${contributionText}</strong><br/><span style="opacity:0.7">${formattedDate}</span>`;
-        tooltip.style.opacity = '1';
+        tooltip.style.opacity = "1";
       });
 
-      day.addEventListener('mousemove', (e) => {
+      day.addEventListener("mousemove", e => {
         const mouseEvent = e as MouseEvent;
         // Position tooltip above the cursor
         const x = mouseEvent.pageX;
@@ -324,19 +344,19 @@ data.forEach((week, weekIndex) => {
         // Adjust if tooltip would go off screen
         const rect = tooltip.getBoundingClientRect();
         let left = x - rect.width / 2;
-        let top = y - rect.height;
+        const top = y - rect.height;
 
         if (left < 10) left = 10;
         if (left + rect.width > window.innerWidth - 10) {
           left = window.innerWidth - rect.width - 10;
         }
 
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
       });
 
-      day.addEventListener('mouseleave', () => {
-        tooltip.style.opacity = '0';
+      day.addEventListener("mouseleave", () => {
+        tooltip.style.opacity = "0";
       });
     });
   });

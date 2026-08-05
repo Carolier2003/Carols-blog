@@ -3,7 +3,7 @@ name: Sync GitHub Avatar
 on:
   schedule:
     # 每天凌晨 3 点运行
-    - cron: '0 3 * * *'
+    - cron: "0 3 * * *"
   workflow_dispatch: # 允许手动触发
 
 jobs:

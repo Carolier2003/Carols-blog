@@ -27,12 +27,14 @@ tags: ["Astro", "View Transitions", "JavaScript", "前端开发", "性能优化"
 打开浏览器开发者工具，对比两种进入方式的网络请求：
 
 **直接访问（正常）：**
+
 ```
 GET https://api.kon-carol.xyz/api/views/batch?slugs=xxx  200 OK
 GET https://giscus.app/api/discussions?repo=...         200 OK
 ```
 
 **从首页跳转（异常）：**
+
 ```
 （没有上述请求）
 ```
@@ -62,6 +64,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 我首先想到的是：既然 DOM 被替换了，那我在替换后重新初始化组件不就行了？
 
 查阅 Astro 文档，发现 View Transitions 提供了几个生命周期事件：
+
 - `astro:before-swap` —— 在 DOM 替换前触发
 - `astro:after-swap` —— 在 DOM 替换后触发
 - `astro:page-load` —— 在页面完全加载后触发
@@ -71,7 +74,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 ```astro
 <script is:inline>
   function initViewCounter() {
-    console.log('Initializing view counter...');
+    console.log("Initializing view counter...");
     // ... 获取浏览量
   }
 
@@ -79,7 +82,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
   initViewCounter();
 
   // View Transitions 后再次执行
-  document.addEventListener('astro:page-load', initViewCounter);
+  document.addEventListener("astro:page-load", initViewCounter);
 </script>
 ```
 
@@ -107,7 +110,10 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 
 ```astro
 <script is:inline data-astro-rerun>
-  console.log('Script executed, rerunning:', !!document.querySelector('.view-counter'));
+  console.log(
+    "Script executed, rerunning:",
+    !!document.querySelector(".view-counter")
+  );
 
   async function fetchViewCounts() {
     // ... 获取浏览量并更新 DOM
@@ -128,6 +134,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 **对比分析**：
 
 我对比了本地和线上的差异：
+
 - 本地：`astro dev` 开发模式
 - 线上：`astro build` 构建后的静态站点
 
@@ -141,9 +148,15 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 <head>
   <script>
     // 记录所有的 script 标签
-    window.addEventListener('load', () => {
-      console.log('Scripts in head:', document.head.querySelectorAll('script').length);
-      console.log('Scripts in body:', document.body.querySelectorAll('script').length);
+    window.addEventListener("load", () => {
+      console.log(
+        "Scripts in head:",
+        document.head.querySelectorAll("script").length
+      );
+      console.log(
+        "Scripts in body:",
+        document.body.querySelectorAll("script").length
+      );
     });
   </script>
 </head>
@@ -172,6 +185,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 ---
 // Layout.astro
 ---
+
 <!doctype html>
 <html>
   <head>
@@ -180,7 +194,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 
     <!-- 全局 View Transitions 处理器 -->
     <script is:inline>
-      (function() {
+      (function () {
         // 防止重复注册（虽然 head 不会被替换，但为了保险）
         if (window.__vtHandlerRegistered) return;
         window.__vtHandlerRegistered = true;
@@ -199,7 +213,11 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
           try {
             const cached = sessionStorage.getItem("viewCounts");
             const timestamp = sessionStorage.getItem("viewCountsTimestamp");
-            if (cached && timestamp && Date.now() - parseInt(timestamp) < 300000) {
+            if (
+              cached &&
+              timestamp &&
+              Date.now() - parseInt(timestamp) < 300000
+            ) {
               return JSON.parse(cached);
             }
           } catch (e) {}
@@ -211,9 +229,15 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
           const counters = document.querySelectorAll(".view-counter");
           if (counters.length === 0) return;
 
-          const slugs = [...new Set([...counters].map(el => el.dataset.slug).filter(Boolean))];
+          const slugs = [
+            ...new Set(
+              [...counters].map(el => el.dataset.slug).filter(Boolean)
+            ),
+          ];
           const cachedViews = getCachedViews();
-          const slugsToFetch = slugs.filter(slug => cachedViews[slug] === undefined);
+          const slugsToFetch = slugs.filter(
+            slug => cachedViews[slug] === undefined
+          );
 
           // 获取并更新...
           if (slugsToFetch.length > 0) {
@@ -224,16 +248,16 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
               const data = await response.json();
               // 更新 DOM...
             } catch (error) {
-              console.error('Failed to fetch view counts:', error);
+              console.error("Failed to fetch view counts:", error);
             }
           }
         }
 
         // 清理旧的 Giscus
         function cleanupGiscus() {
-          const existingIframe = document.querySelector('iframe.giscus-frame');
+          const existingIframe = document.querySelector("iframe.giscus-frame");
           if (existingIframe) existingIframe.remove();
-          const existingScript = document.querySelector('script[data-giscus]');
+          const existingScript = document.querySelector("script[data-giscus]");
           if (existingScript) existingScript.remove();
           const container = document.getElementById("giscus-container");
           if (container) container.innerHTML = "";
@@ -246,9 +270,12 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 
           cleanupGiscus();
 
-          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          const isDark =
+            document.documentElement.getAttribute("data-theme") === "dark";
           const baseUrl = "https://blog.kon-carol.xyz";
-          const theme = isDark ? `${baseUrl}/giscus-dark.css` : `${baseUrl}/giscus-light.css`;
+          const theme = isDark
+            ? `${baseUrl}/giscus-dark.css`
+            : `${baseUrl}/giscus-light.css`;
 
           const script = document.createElement("script");
           script.src = "https://giscus.app/client.js";
@@ -261,7 +288,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 
         // 初始化所有组件
         function initComponents() {
-          console.log('[View Transitions] Initializing components...');
+          console.log("[View Transitions] Initializing components...");
           fetchViewCounts();
           loadGiscus();
         }
@@ -270,7 +297,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
         document.addEventListener("astro:page-load", initComponents);
 
         // 首次加载也执行（如果不是 View Transitions 导航）
-        if (document.readyState === 'complete') {
+        if (document.readyState === "complete") {
           initComponents();
         }
       })();
@@ -294,12 +321,13 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 
 核心在于 **`<head>` 和 `<body>` 在 View Transitions 中的不同待遇**：
 
-| 位置 | View Transitions 行为 | 脚本是否保留 | 事件监听器是否保留 |
-|------|----------------------|------------|------------------|
-| `<head>` | 完全不变 | ✅ 保留 | ✅ 保留 |
-| `<body>` | 完全替换为新内容 | ❌ 移除 | ❌ 移除 |
+| 位置     | View Transitions 行为 | 脚本是否保留 | 事件监听器是否保留 |
+| -------- | --------------------- | ------------ | ------------------ |
+| `<head>` | 完全不变              | ✅ 保留      | ✅ 保留            |
+| `<body>` | 完全替换为新内容      | ❌ 移除      | ❌ 移除            |
 
 因此：
+
 - 在 `<body>` 中注册的事件监听器会在页面过渡后丢失
 - 在 `<head>` 中注册的事件监听器会一直存在
 
@@ -308,6 +336,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 官方文档推荐用 `data-astro-rerun` 让脚本在 View Transitions 后重新执行。但在 Astro v5.16.6 中，这个特性似乎存在 bug——`<body>` 中的 `data-astro-rerun` 脚本会被移除，但没有被重新执行。
 
 **可能的解释**：
+
 - Astro 的 View Transitions 实现可能存在时序问题
 - 脚本被移除后，重新执行的逻辑可能没有正确触发
 - 或者与 Cloudflare Pages 的部署环境有兼容性问题
@@ -319,6 +348,7 @@ GET https://giscus.app/api/discussions?repo=...         200 OK
 既然初始化逻辑已经移到 `Layout.astro`，组件本身可以大大简化：
 
 **ViewCounter.astro**
+
 ```astro
 ---
 interface Props {
@@ -336,6 +366,7 @@ const { slug } = Astro.props;
 ```
 
 **Comments.astro**
+
 ```astro
 <div class="comments-section">
   <h3>评论</h3>
@@ -352,6 +383,7 @@ const { slug } = Astro.props;
 ### 热力图的特殊需求
 
 与 ViewCounter 不同，热力图只在 About 页面使用，不需要全局管理。但它有更复杂的交互需求：
+
 - 鼠标悬停显示 Tooltip
 - 52×7 的 SVG 网格需要动态生成
 - 从 API 获取一年的贡献数据
@@ -368,13 +400,15 @@ const { slug } = Astro.props;
 <!-- 骨架屏 -->
 <div id="contributions-skeleton">
   <div class="skeleton-grid">
-    {Array.from({ length: 52 }).map(() => (
-      <div class="skeleton-week">
-        {Array.from({ length: 7 }).map(() => (
-          <div class="skeleton-cell" />
-        ))}
-      </div>
-    ))}
+    {
+      Array.from({ length: 52 }).map(() => (
+        <div class="skeleton-week">
+          {Array.from({ length: 7 }).map(() => (
+            <div class="skeleton-cell" />
+          ))}
+        </div>
+      ))
+    }
   </div>
 </div>
 
@@ -384,17 +418,18 @@ const { slug } = Astro.props;
 </div>
 
 <!-- Tooltip -->
-<div id="contrib-tooltip" class="contrib-tooltip" />
+<div id="contrib-tooltip" class="contrib-tooltip"></div>
 
 <script is:inline>
-  (function() {
-    const API_BASE = location.hostname === 'localhost'
-      ? 'http://localhost:8787'
-      : 'https://api.kon-carol.xyz';
+  (function () {
+    const API_BASE =
+      location.hostname === "localhost"
+        ? "http://localhost:8787"
+        : "https://api.kon-carol.xyz";
 
     // 检查缓存（5分钟TTL）
     function getCachedData() {
-      const cached = sessionStorage.getItem('contributions');
+      const cached = sessionStorage.getItem("contributions");
       if (cached) {
         const data = JSON.parse(cached);
         if (Date.now() - data.cachedAt < 5 * 60 * 1000) {
@@ -406,8 +441,8 @@ const { slug } = Astro.props;
 
     function renderContributions(data) {
       // 隐藏骨架屏，显示内容
-      document.getElementById('contributions-skeleton').style.display = 'none';
-      document.getElementById('contributions-content').style.display = 'flex';
+      document.getElementById("contributions-skeleton").style.display = "none";
+      document.getElementById("contributions-content").style.display = "flex";
 
       // 生成 SVG 热力图...
     }
@@ -421,7 +456,7 @@ const { slug } = Astro.props;
       }
 
       // 显示骨架屏
-      document.getElementById('contributions-skeleton').style.display = 'flex';
+      document.getElementById("contributions-skeleton").style.display = "flex";
 
       try {
         const response = await fetch(`${API_BASE}/api/contributions`);
@@ -430,11 +465,11 @@ const { slug } = Astro.props;
         if (result.success) {
           // 存入缓存
           result.data.cachedAt = Date.now();
-          sessionStorage.setItem('contributions', JSON.stringify(result.data));
+          sessionStorage.setItem("contributions", JSON.stringify(result.data));
           renderContributions(result.data);
         }
       } catch (err) {
-        console.error('Failed to load:', err);
+        console.error("Failed to load:", err);
       }
     }
 
@@ -442,19 +477,19 @@ const { slug } = Astro.props;
     fetchContributions();
 
     // View Transitions 后重新加载
-    document.addEventListener('astro:page-load', fetchContributions);
+    document.addEventListener("astro:page-load", fetchContributions);
   })();
 </script>
 ```
 
 ### 关键区别
 
-| 特性 | 全局方案（Layout.astro） | 局部方案（页面内） |
-|------|------------------------|------------------|
-| 适用场景 | 多页面共享的组件（导航、计数器） | 单页面特有功能（热力图） |
-| 脚本位置 | `<head>` | `<body>`（使用 `is:inline`）|
-| 状态管理 | 全局变量 | sessionStorage 缓存 |
-| 代码组织 | 集中管理 | 就近放置，易于维护 |
+| 特性     | 全局方案（Layout.astro）         | 局部方案（页面内）           |
+| -------- | -------------------------------- | ---------------------------- |
+| 适用场景 | 多页面共享的组件（导航、计数器） | 单页面特有功能（热力图）     |
+| 脚本位置 | `<head>`                         | `<body>`（使用 `is:inline`） |
+| 状态管理 | 全局变量                         | sessionStorage 缓存          |
+| 代码组织 | 集中管理                         | 就近放置，易于维护           |
 
 ### 为什么局部方案也有效？
 
@@ -473,28 +508,29 @@ const { slug } = Astro.props;
 
 ```javascript
 // sessionStorage - 标签页关闭即清理，适合短期缓存
-sessionStorage.setItem('key', JSON.stringify(data));
+sessionStorage.setItem("key", JSON.stringify(data));
 
 // localStorage - 永久存储，适合主题设置等
-localStorage.setItem('key', JSON.stringify(data));
+localStorage.setItem("key", JSON.stringify(data));
 
 // 内存缓存 - 页面刷新即丢失
 window.__cache = data;
 ```
 
 对于贡献数据，我用 `sessionStorage` + 5分钟 TTL：
+
 - 用户在同一会话内多次访问 About 页面，直接用缓存
 - 新开标签页或关闭重开会重新获取（避免数据过旧）
 - 比 API 调用快，比 localStorage 干净
 
 ## 两种方案如何选择？
 
-| 场景 | 推荐方案 | 原因 |
-|------|---------|------|
-| 导航栏、全局计数器、评论 | 全局 `<head>` 方案 | 所有页面共享，避免重复注册 |
-| 页面特有的图表、交互组件 | 局部 `is:inline` 方案 | 代码内聚，易于理解和维护 |
-| 需要复杂状态管理 | 全局方案 + 全局变量 | 跨页面保持状态 |
-| 数据需要缓存 | 局部方案 + Storage | 独立管理生命周期 |
+| 场景                     | 推荐方案              | 原因                       |
+| ------------------------ | --------------------- | -------------------------- |
+| 导航栏、全局计数器、评论 | 全局 `<head>` 方案    | 所有页面共享，避免重复注册 |
+| 页面特有的图表、交互组件 | 局部 `is:inline` 方案 | 代码内聚，易于理解和维护   |
+| 需要复杂状态管理         | 全局方案 + 全局变量   | 跨页面保持状态             |
+| 数据需要缓存             | 局部方案 + Storage    | 独立管理生命周期           |
 
 ## 经验总结
 
@@ -528,11 +564,9 @@ window.__cache = data;
 ```astro
 <!-- 骨架屏：默认显示 -->
 <div id="skeleton" class="skeleton-container">
-  <div class="skeleton-header" />
+  <div class="skeleton-header"></div>
   <div class="skeleton-grid">
-    {Array.from({ length: 52 }).map(() => (
-      <div class="skeleton-cell" />
-    ))}
+    {Array.from({ length: 52 }).map(() => <div class="skeleton-cell" />)}
   </div>
 </div>
 
@@ -544,11 +578,11 @@ window.__cache = data;
 <script is:inline>
   async function loadData() {
     // 骨架屏已显示，直接请求数据
-    const data = await fetch('/api/data').then(r => r.json());
+    const data = await fetch("/api/data").then(r => r.json());
 
     // 渲染完成后切换显示
-    document.getElementById('skeleton').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
+    document.getElementById("skeleton").style.display = "none";
+    document.getElementById("content").style.display = "block";
   }
 </script>
 ```
@@ -563,8 +597,13 @@ window.__cache = data;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.1; }
-  50% { opacity: 0.2; }
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.2;
+  }
 }
 ```
 
@@ -576,7 +615,7 @@ window.__cache = data;
 <head>
   <ClientRouter />
   <script is:inline>
-    (function() {
+    (function () {
       // 防止重复注册
       if (window.__myHandlerRegistered) return;
       window.__myHandlerRegistered = true;
@@ -586,10 +625,10 @@ window.__cache = data;
       }
 
       // View Transitions 后执行
-      document.addEventListener('astro:page-load', init);
+      document.addEventListener("astro:page-load", init);
 
       // 首次加载也执行
-      if (document.readyState === 'complete') {
+      if (document.readyState === "complete") {
         init();
       }
     })();

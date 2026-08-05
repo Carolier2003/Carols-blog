@@ -14,16 +14,16 @@
 </div>
 
 <script is:inline data-astro-rerun>
-  (function() {
+  (function () {
     const baseUrl = "https://blog.kon-carol.xyz";
 
     function cleanupGiscus() {
       // Remove existing giscus iframe and script
-      const existingIframe = document.querySelector('iframe.giscus-frame');
+      const existingIframe = document.querySelector("iframe.giscus-frame");
       if (existingIframe) {
         existingIframe.remove();
       }
-      const existingScript = document.querySelector('script[data-giscus]');
+      const existingScript = document.querySelector("script[data-giscus]");
       if (existingScript) {
         existingScript.remove();
       }
@@ -40,8 +40,11 @@
       // Clean up first
       cleanupGiscus();
 
-      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      const theme = isDark ? `${baseUrl}/giscus-dark.css` : `${baseUrl}/giscus-light.css`;
+      const isDark =
+        document.documentElement.getAttribute("data-theme") === "dark";
+      const theme = isDark
+        ? `${baseUrl}/giscus-dark.css`
+        : `${baseUrl}/giscus-light.css`;
 
       const script = document.createElement("script");
       script.src = "https://giscus.app/client.js";

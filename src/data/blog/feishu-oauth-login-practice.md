@@ -19,12 +19,12 @@ tags:
 
 通过接入飞书 OAuth 2.0 授权（参考[飞书 SSO 登录流程概览](https://open.feishu.cn/document/sso/web-application-sso/login-overview)），可以实现：
 
-| 价值 | 说明 |
-|------|------|
+| 价值         | 说明                                         |
+| ------------ | -------------------------------------------- |
 | **单点登录** | 员工无需记忆独立密码，扫码或一键授权即可登录 |
-| **体验一致** | 与飞书生态无缝衔接，降低使用门槛 |
-| **信息同步** | 登录时实时校正姓名、头像等信息 |
-| **安全可控** | 飞书账号禁用后，系统登录自动失效 |
+| **体验一致** | 与飞书生态无缝衔接，降低使用门槛             |
+| **信息同步** | 登录时实时校正姓名、头像等信息               |
+| **安全可控** | 飞书账号禁用后，系统登录自动失效             |
 
 本文将以 OAuth 2.0 授权码模式为主线，从零到一拆解飞书登录的完整接入流程，包含前端实现、后端设计、安全防护和踩坑记录。
 
@@ -34,10 +34,10 @@ tags:
 
 系统登录页通常同时提供两种飞书登录方式，由用户根据当前场景自由选择：
 
-| 登录方式 | 适用场景 | 交互方式 |
-|----------|----------|----------|
-| **一键授权登录** | 用户已在浏览器登录飞书网页版 / 桌面客户端 | 页面跳转到飞书 OAuth 授权页，确认后自动回调 |
-| **二维码扫码登录** | 用户未在浏览器登录飞书 | 页面内嵌飞书二维码，手机扫码后自动完成登录 |
+| 登录方式           | 适用场景                                  | 交互方式                                    |
+| ------------------ | ----------------------------------------- | ------------------------------------------- |
+| **一键授权登录**   | 用户已在浏览器登录飞书网页版 / 桌面客户端 | 页面跳转到飞书 OAuth 授权页，确认后自动回调 |
+| **二维码扫码登录** | 用户未在浏览器登录飞书                    | 页面内嵌飞书二维码，手机扫码后自动完成登录  |
 
 > **技术要点**：浏览器**无法主动检测**用户是否已登录飞书（跨域安全限制），因此登录页需同时提供两种入口。扫码登录需接入[飞书 QR SDK](https://open.feishu.cn/document/common-capabilities/sso/web-application-sso/qr-sdk-documentation)。
 
@@ -105,6 +105,7 @@ sequenceDiagram
 ```
 
 **两种方式的共同点**：
+
 - 后端登录逻辑完全一致：前端携带 `code` + `state` 调用 `POST /verify`
 - `OAuth 回调地址`配置为前端地址（如 `https://{domain}/feishu/callback`）
 - `redirect_uri` 须与[飞书开放平台](https://open.feishu.cn/)「安全设置 → 重定向 URL」中配置的**完全一致**
@@ -120,14 +121,14 @@ sequenceDiagram
 ```javascript
 // 获取飞书登录配置
 async function getFeishuConfig() {
-  const res = await fetch('/api/login/feishu/config')
-  const { appId, authUrl, state, redirectUri } = await res.json()
+  const res = await fetch("/api/login/feishu/config");
+  const { appId, authUrl, state, redirectUri } = await res.json();
 
   // state 写入 sessionStorage，回调时做二次校验
-  sessionStorage.setItem('feishu_state', state)
-  sessionStorage.setItem('feishu_redirect_uri', redirectUri)
+  sessionStorage.setItem("feishu_state", state);
+  sessionStorage.setItem("feishu_redirect_uri", redirectUri);
 
-  return { appId, authUrl, state, redirectUri }
+  return { appId, authUrl, state, redirectUri };
 }
 ```
 
@@ -136,10 +137,10 @@ async function getFeishuConfig() {
 一键授权使用**当前页面直接跳转**的方式，而非弹窗：
 
 ```javascript
-const { authUrl } = await getFeishuConfig()
+const { authUrl } = await getFeishuConfig();
 
 // 直接跳转（非弹窗），避免 COOP 限制导致 opener 失效
-window.location.href = authUrl
+window.location.href = authUrl;
 ```
 
 > **为什么不用弹窗？** 生产环境的 `Cross-Origin-Opener-Policy: same-origin` 响应头会导致弹出窗口的 `window.opener` 为 `null`，弹窗方案不可靠。
@@ -152,27 +153,27 @@ window.location.href = authUrl
 // 引入飞书 QR SDK（通过 script 标签或 npm 包）
 // SDK 会在指定 DOM 元素内渲染二维码 iframe
 
-const { authUrl, appId } = await getFeishuConfig()
+const { authUrl, appId } = await getFeishuConfig();
 
 // 初始化二维码
 const qrObj = QRLogin({
-  id: 'qrcode-container',   // 二维码挂载的 DOM 元素 ID
-  goto: authUrl,            // 扫码成功后跳转的授权 URL
-  width: '250',
-  height: '250',
-})
+  id: "qrcode-container", // 二维码挂载的 DOM 元素 ID
+  goto: authUrl, // 扫码成功后跳转的授权 URL
+  width: "250",
+  height: "250",
+});
 
 // 监听 postMessage 获取扫码结果
-window.addEventListener('message', (e) => {
+window.addEventListener("message", e => {
   // 校验消息来源
-  if (!qrObj.matchOrigin(e.origin)) return
+  if (!qrObj.matchOrigin(e.origin)) return;
 
-  const tmpCode = e.data?.tmp_code ?? e.data
-  if (typeof tmpCode !== 'string' || tmpCode.length < 10) return
+  const tmpCode = e.data?.tmp_code ?? e.data;
+  if (typeof tmpCode !== "string" || tmpCode.length < 10) return;
 
   // 携带 tmp_code 跳转飞书授权
-  window.location.href = authUrl + '&tmp_code=' + tmpCode
-})
+  window.location.href = authUrl + "&tmp_code=" + tmpCode;
+});
 ```
 
 ### 4.4 OAuth 回调处理
@@ -181,38 +182,38 @@ window.addEventListener('message', (e) => {
 
 ```javascript
 // 在路由初始化前拦截回调 URL
-if (window.location.pathname === '/feishu/callback') {
-  const params = new URLSearchParams(window.location.search)
-  const code = params.get('code')
-  const state = params.get('state')
+if (window.location.pathname === "/feishu/callback") {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const state = params.get("state");
 
   // 校验 state 与之前存入 sessionStorage 的一致
-  const savedState = sessionStorage.getItem('feishu_state')
+  const savedState = sessionStorage.getItem("feishu_state");
   if (state !== savedState) {
-    localStorage.setItem('feishu_login_error', '非法请求，请重新登录')
-    location.replace('/login')
-    return
+    localStorage.setItem("feishu_login_error", "非法请求，请重新登录");
+    location.replace("/login");
+    return;
   }
 
   // 调用后端验证接口
   try {
-    const res = await fetch('/api/login/feishu/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/login/feishu/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, state }),
-    })
-    const data = await res.json()
+    });
+    const data = await res.json();
     if (data.code === 0) {
       // 登录成功，存入 pending 让登录页读取
-      localStorage.setItem('feishu_login_pending', JSON.stringify(data.data))
-      location.replace('/login')
+      localStorage.setItem("feishu_login_pending", JSON.stringify(data.data));
+      location.replace("/login");
     } else {
-      localStorage.setItem('feishu_login_error', data.msg)
-      location.replace('/login')
+      localStorage.setItem("feishu_login_error", data.msg);
+      location.replace("/login");
     }
   } catch (err) {
-    localStorage.setItem('feishu_login_error', '登录失败，请重试')
-    location.replace('/login')
+    localStorage.setItem("feishu_login_error", "登录失败，请重试");
+    location.replace("/login");
   }
 }
 ```
@@ -407,10 +408,10 @@ flowchart LR
     H -->|存在| J[原子删除 state 发放登录凭证]
 ```
 
-| 校验层 | 存储位置 | 作用 |
-|--------|----------|------|
-| 前端 | `sessionStorage` | 防 CSRF：URL 中的 state 与本地存储不一致时直接拒绝 |
-| 后端 | Redis（TTL 5 分钟） | 防重放：verify 校验后原子删除，一个 state 只能用一次 |
+| 校验层 | 存储位置            | 作用                                                 |
+| ------ | ------------------- | ---------------------------------------------------- |
+| 前端   | `sessionStorage`    | 防 CSRF：URL 中的 state 与本地存储不一致时直接拒绝   |
+| 后端   | Redis（TTL 5 分钟） | 防重放：verify 校验后原子删除，一个 state 只能用一次 |
 
 ### 6.2 redirect_uri 一致性
 
@@ -423,6 +424,7 @@ flowchart LR
 ### 6.3 账号状态校验
 
 登录时需检查员工账号状态：
+
 - 未绑定：提示"联系管理员"
 - 已删除：拒绝登录
 - 已禁用：拒绝登录
@@ -475,14 +477,14 @@ flowchart LR
 
 但实际落地中，**安全防护**（双重 state 校验、防重放）和**边界情况**（COOP 限制、redirect_uri 一致性）才是真正需要关注的点。建议在开发时参考以下飞书官方文档：
 
-| 文档 | 链接 |
-|------|------|
-| 飞书 SSO 登录流程概览 | [查看](https://open.feishu.cn/document/sso/web-application-sso/login-overview) |
-| 飞书 QR SDK 接入文档 | [查看](https://open.feishu.cn/document/common-capabilities/sso/web-application-sso/qr-sdk-documentation) |
-| 获取 user_access_token | [查看](https://open.feishu.cn/document/authentication-management/access-token/get-user-access-token) |
-| 刷新 user_access_token | [查看](https://open.feishu.cn/document/authentication-management/access-token/refresh-user-access-token) |
-| 获取登录用户身份 | [查看](https://open.feishu.cn/document/server-docs/authentication-management/login-state-management/get) |
+| 文档                   | 链接                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| 飞书 SSO 登录流程概览  | [查看](https://open.feishu.cn/document/sso/web-application-sso/login-overview)                            |
+| 飞书 QR SDK 接入文档   | [查看](https://open.feishu.cn/document/common-capabilities/sso/web-application-sso/qr-sdk-documentation)  |
+| 获取 user_access_token | [查看](https://open.feishu.cn/document/authentication-management/access-token/get-user-access-token)      |
+| 刷新 user_access_token | [查看](https://open.feishu.cn/document/authentication-management/access-token/refresh-user-access-token)  |
+| 获取登录用户身份       | [查看](https://open.feishu.cn/document/server-docs/authentication-management/login-state-management/get)  |
 | 飞书 Java SDK 使用指南 | [查看](https://open.feishu.cn/document/uAjL4wCM/ukTMukTMukTM/server-side-sdk/java-sdk-guide/preparations) |
-| 飞书 OAuth 授权接口 | [查看](https://open.feishu.cn/document/sso/web-application-sso/login-overview) |
+| 飞书 OAuth 授权接口    | [查看](https://open.feishu.cn/document/sso/web-application-sso/login-overview)                            |
 
 通过这套方案，可以实现员工使用飞书身份一键登录后台系统，提升内部系统的使用体验和安全水位。
