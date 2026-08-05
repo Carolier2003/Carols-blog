@@ -178,6 +178,12 @@ const { frontmatter } = Astro.props;
             <span class="hidden sm:inline"
               >GitCode: <strong id="contrib-gitcode">0</strong></span
             >
+            <span
+              id="contrib-gitlab-stat"
+              class="hidden sm:inline"
+              style="display: none;"
+              >GitLab: <strong id="contrib-gitlab">0</strong></span
+            >
           </div>
           <!-- SVG Heatmap -->
           <div class="heatmap-scroll-container">
@@ -267,6 +273,7 @@ const { frontmatter } = Astro.props;
             const count = day.count;
             const githubCount = day.githubCount || 0;
             const gitcodeCount = day.gitcodeCount || 0;
+            const gitlabCount = day.gitlabCount || 0;
 
             // Build tooltip content
             const countText =
@@ -278,12 +285,13 @@ const { frontmatter } = Astro.props;
             document.getElementById("tooltip-count").textContent = countText;
 
             let sourcesHtml = "";
-            if (githubCount > 0 || gitcodeCount > 0) {
-              sourcesHtml = "";
+            if (githubCount > 0 || gitcodeCount > 0 || gitlabCount > 0) {
               if (githubCount > 0)
                 sourcesHtml += `<span>GitHub: ${githubCount}</span>`;
               if (gitcodeCount > 0)
                 sourcesHtml += `<span>GitCode: ${gitcodeCount}</span>`;
+              if (gitlabCount > 0)
+                sourcesHtml += `<span>GitLab: ${gitlabCount}</span>`;
             }
             document.getElementById("tooltip-sources").innerHTML = sourcesHtml;
             document.getElementById("tooltip-date").textContent = formatDate(
@@ -341,6 +349,13 @@ const { frontmatter } = Astro.props;
               data.githubTotal.toLocaleString();
             document.getElementById("contrib-gitcode").textContent =
               data.gitcodeTotal.toLocaleString();
+
+            // GitLab 为可选来源：后端返回 gitlabTotal 时才显示该项
+            const gitlabTotal = data.gitlabTotal || 0;
+            document.getElementById("contrib-gitlab").textContent =
+              gitlabTotal.toLocaleString();
+            document.getElementById("contrib-gitlab-stat").style.display =
+              gitlabTotal > 0 ? "" : "none";
 
             // 渲染图例
             renderLegend();
