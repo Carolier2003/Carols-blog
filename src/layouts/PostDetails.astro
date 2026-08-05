@@ -112,7 +112,7 @@ const nextPost =
       <span
         aria-hidden="true"
         class:list={[
-          "max-sm:hidden text-muted",
+          "text-muted max-sm:hidden",
           { hidden: !SITE.editPost.enabled || hideEditPost },
         ]}>|</span
       >
@@ -307,8 +307,9 @@ const nextPost =
     // Load medium-zoom from CDN if not already loaded
     if (!window.mediumZoom) {
       await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js';
+        const script = document.createElement("script");
+        script.src =
+          "https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js";
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
@@ -321,10 +322,13 @@ const nextPost =
     }
 
     // Get current theme
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const isDark =
+      document.documentElement.getAttribute("data-theme") === "dark";
 
     window.__mediumZoom = window.mediumZoom(".app-prose img:not(.no-zoom)", {
-      background: isDark ? "rgba(33, 39, 55, 0.95)" : "rgba(253, 253, 253, 0.95)",
+      background: isDark
+        ? "rgba(33, 39, 55, 0.95)"
+        : "rgba(253, 253, 253, 0.95)",
       margin: 24,
       scrollOffset: 0,
     });
@@ -345,7 +349,8 @@ const nextPost =
     if (!window.mermaid) {
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+        script.src =
+          "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
@@ -354,14 +359,16 @@ const nextPost =
 
     // Find all mermaid code blocks and convert them
     // Shiki renders them as: <pre data-language="mermaid"><code><span class="line"><span style="...">content</span></span></code></pre>
-    document.querySelectorAll('pre[data-language="mermaid"]').forEach((pre) => {
+    document.querySelectorAll('pre[data-language="mermaid"]').forEach(pre => {
       if (pre.classList.contains("mermaid")) return;
 
       // Extract raw text preserving line breaks from Shiki's <span class="line"> elements
       const lines = pre.querySelectorAll(".line");
       let rawText = "";
       if (lines.length > 0) {
-        rawText = Array.from(lines).map(line => line.textContent).join("\n");
+        rawText = Array.from(lines)
+          .map(line => line.textContent)
+          .join("\n");
       } else {
         rawText = pre.textContent || "";
       }
@@ -418,24 +425,44 @@ const nextPost =
     if (!window.__mermaidThemeHandlerRegistered) {
       window.__mermaidThemeHandlerRegistered = true;
       const observer = new MutationObserver(() => {
-        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-        document.querySelectorAll(".mermaid svg").forEach((svg) => {
+        const isDark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.querySelectorAll(".mermaid svg").forEach(svg => {
           if (isDark) {
             svg.style.background = "#212737";
-            svg.querySelectorAll("[fill='#fdfdfd']").forEach(el => el.setAttribute("fill", "#212737"));
-            svg.querySelectorAll("[fill='#f5f0e8']").forEach(el => el.setAttribute("fill", "#2a3045"));
-            svg.querySelectorAll("[fill='#faf6ef']").forEach(el => el.setAttribute("fill", "#2a3045"));
-            svg.querySelectorAll("[fill='#f0ebe3']").forEach(el => el.setAttribute("fill", "#1e2438"));
-            svg.querySelectorAll("[fill='#282728']").forEach(el => el.setAttribute("fill", "#eaedf3"));
-            svg.querySelectorAll("[stroke='#282728']").forEach(el => el.setAttribute("stroke", "#eaedf3"));
-            svg.querySelectorAll("[stroke='#d4c9b8']").forEach(el => el.setAttribute("stroke", "#4a5065"));
-            svg.querySelectorAll("[stroke='#b8a88e']").forEach(el => el.setAttribute("stroke", "#4a5065"));
+            svg
+              .querySelectorAll("[fill='#fdfdfd']")
+              .forEach(el => el.setAttribute("fill", "#212737"));
+            svg
+              .querySelectorAll("[fill='#f5f0e8']")
+              .forEach(el => el.setAttribute("fill", "#2a3045"));
+            svg
+              .querySelectorAll("[fill='#faf6ef']")
+              .forEach(el => el.setAttribute("fill", "#2a3045"));
+            svg
+              .querySelectorAll("[fill='#f0ebe3']")
+              .forEach(el => el.setAttribute("fill", "#1e2438"));
+            svg
+              .querySelectorAll("[fill='#282728']")
+              .forEach(el => el.setAttribute("fill", "#eaedf3"));
+            svg
+              .querySelectorAll("[stroke='#282728']")
+              .forEach(el => el.setAttribute("stroke", "#eaedf3"));
+            svg
+              .querySelectorAll("[stroke='#d4c9b8']")
+              .forEach(el => el.setAttribute("stroke", "#4a5065"));
+            svg
+              .querySelectorAll("[stroke='#b8a88e']")
+              .forEach(el => el.setAttribute("stroke", "#4a5065"));
           } else {
             svg.style.background = "#fdfdfd";
           }
         });
       });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
     }
   }
 

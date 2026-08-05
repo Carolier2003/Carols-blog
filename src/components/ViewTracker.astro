@@ -13,7 +13,7 @@ const { slug } = Astro.props;
 <div data-view-tracker data-slug={slug}></div>
 
 <script is:inline data-astro-rerun>
-  (function() {
+  (function () {
     const VIEW_API_BASE = "https://api.kon-carol.xyz";
 
     // 检查是否已经记录过浏览量（使用 localStorage）
@@ -71,12 +71,15 @@ const { slug } = Astro.props;
       hasTracked = true;
 
       try {
-        const response = await fetch(`${VIEW_API_BASE}/api/views/${encodeURIComponent(slug)}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(
+          `${VIEW_API_BASE}/api/views/${encodeURIComponent(slug)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -117,8 +120,8 @@ const { slug } = Astro.props;
       // 方案2：元素可见时计数
       if ("IntersectionObserver" in window && trackerEl) {
         const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
+          entries => {
+            entries.forEach(entry => {
               if (entry.isIntersecting) {
                 // 元素可见时计数（延迟后）
                 setTimeout(() => {

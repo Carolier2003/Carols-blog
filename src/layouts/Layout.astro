@@ -142,18 +142,20 @@ const structuredData = {
       // Global counter for forcing React component remount
       window.__vtNavigationCount = 0;
 
-      document.addEventListener('astro:page-load', function() {
+      document.addEventListener("astro:page-load", function () {
         window.__vtNavigationCount++;
         // Dispatch custom event for React components
-        document.dispatchEvent(new CustomEvent('vt:page-load', {
-          detail: { count: window.__vtNavigationCount }
-        }));
+        document.dispatchEvent(
+          new CustomEvent("vt:page-load", {
+            detail: { count: window.__vtNavigationCount },
+          })
+        );
       });
     </script>
 
     <!-- Global Contributions data fetcher -->
     <script is:inline>
-      (function() {
+      (function () {
         // Prevent duplicate event listener registration
         if (window.__contributionsHandlerRegistered) return;
         window.__contributionsHandlerRegistered = true;
@@ -162,7 +164,7 @@ const structuredData = {
 
         async function fetchContributions() {
           // Only fetch on about page
-          if (!window.location.pathname.includes('/about')) return;
+          if (!window.location.pathname.includes("/about")) return;
 
           // Check if already fetched for this navigation
           if (window.__contributionsData) return;
@@ -174,13 +176,15 @@ const structuredData = {
               if (result.success) {
                 window.__contributionsData = result.data;
                 // Dispatch event to notify React component
-                document.dispatchEvent(new CustomEvent('contributions:data-loaded', {
-                  detail: result.data
-                }));
+                document.dispatchEvent(
+                  new CustomEvent("contributions:data-loaded", {
+                    detail: result.data,
+                  })
+                );
               }
             }
           } catch (err) {
-            console.error('Failed to fetch contributions:', err);
+            console.error("Failed to fetch contributions:", err);
           }
         }
 
@@ -188,49 +192,56 @@ const structuredData = {
         fetchContributions();
 
         // Fetch after View Transitions
-        document.addEventListener('astro:page-load', fetchContributions);
+        document.addEventListener("astro:page-load", fetchContributions);
       })();
     </script>
 
     <!-- Global View Transitions handler for ViewCounter and Comments -->
     <script is:inline>
-      (function() {
+      (function () {
         // Prevent duplicate initialization
         if (window.__viewHandlerInitialized) return;
         window.__viewHandlerInitialized = true;
 
         window.VIEW_API_BASE = "https://api.kon-carol.xyz";
 
-        window.formatCount = function(num) {
+        window.formatCount = function (num) {
           if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
           if (num >= 1000) return (num / 1000).toFixed(1) + "k";
           return num.toString();
         };
 
-        window.getCachedViews = function() {
+        window.getCachedViews = function () {
           try {
             const cached = sessionStorage.getItem("viewCounts");
             const timestamp = sessionStorage.getItem("viewCountsTimestamp");
-            if (cached && timestamp && Date.now() - parseInt(timestamp) < 300000) {
+            if (
+              cached &&
+              timestamp &&
+              Date.now() - parseInt(timestamp) < 300000
+            ) {
               return JSON.parse(cached);
             }
           } catch (e) {}
           return {};
         };
 
-        window.setCachedViews = function(views) {
+        window.setCachedViews = function (views) {
           try {
             sessionStorage.setItem("viewCounts", JSON.stringify(views));
-            sessionStorage.setItem("viewCountsTimestamp", Date.now().toString());
+            sessionStorage.setItem(
+              "viewCountsTimestamp",
+              Date.now().toString()
+            );
           } catch (e) {}
         };
 
-        window.fetchViewCounts = async function() {
+        window.fetchViewCounts = async function () {
           const counters = document.querySelectorAll(".view-counter");
           const slugs = [];
           const slugToElements = new Map();
 
-          counters.forEach(function(el) {
+          counters.forEach(function (el) {
             const slug = el.dataset.slug;
             if (slug) {
               slugs.push(slug);
@@ -248,7 +259,7 @@ const structuredData = {
           const slugsToFetch = [];
           const result = { ...cachedViews };
 
-          uniqueSlugs.forEach(function(slug) {
+          uniqueSlugs.forEach(function (slug) {
             if (cachedViews[slug] === undefined) {
               slugsToFetch.push(slug);
             }
@@ -258,8 +269,10 @@ const structuredData = {
             try {
               const slugsParam = slugsToFetch.join(",");
               const response = await fetch(
-          VIEW_API_BASE + "/api/views/batch?slugs=" + encodeURIComponent(slugsParam)
-        );
+                VIEW_API_BASE +
+                  "/api/views/batch?slugs=" +
+                  encodeURIComponent(slugsParam)
+              );
 
               if (response.ok) {
                 const data = await response.json();
@@ -272,10 +285,10 @@ const structuredData = {
             } catch (error) {}
           }
 
-          uniqueSlugs.forEach(function(slug) {
+          uniqueSlugs.forEach(function (slug) {
             const elements = slugToElements.get(slug);
             const count = result[slug] ?? 0;
-            elements?.forEach(function(el) {
+            elements?.forEach(function (el) {
               const countEl = el.querySelector(".count");
               if (countEl) {
                 countEl.textContent = formatCount(count);
@@ -284,24 +297,27 @@ const structuredData = {
           });
         };
 
-        window.cleanupGiscus = function() {
-          const existingIframe = document.querySelector('iframe.giscus-frame');
+        window.cleanupGiscus = function () {
+          const existingIframe = document.querySelector("iframe.giscus-frame");
           if (existingIframe) existingIframe.remove();
-          const existingScript = document.querySelector('script[data-giscus]');
+          const existingScript = document.querySelector("script[data-giscus]");
           if (existingScript) existingScript.remove();
           const container = document.getElementById("giscus-container");
           if (container) container.innerHTML = "";
         };
 
-        window.loadGiscus = function() {
+        window.loadGiscus = function () {
           const container = document.getElementById("giscus-container");
           if (!container) return;
 
           cleanupGiscus();
 
-          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          const isDark =
+            document.documentElement.getAttribute("data-theme") === "dark";
           const baseUrl = "https://blog.kon-carol.xyz";
-          const theme = isDark ? baseUrl + "/giscus-dark.css" : baseUrl + "/giscus-light.css";
+          const theme = isDark
+            ? baseUrl + "/giscus-dark.css"
+            : baseUrl + "/giscus-light.css";
 
           const script = document.createElement("script");
           script.src = "https://giscus.app/client.js";
@@ -332,8 +348,8 @@ const structuredData = {
         document.addEventListener("astro:page-load", initComponents);
 
         // Also run on initial load
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initComponents);
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initComponents);
         } else {
           initComponents();
         }

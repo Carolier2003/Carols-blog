@@ -27,7 +27,11 @@ export function getCachedViews(): Record<string, number> {
     const cached = sessionStorage.getItem("viewCounts");
     const timestamp = sessionStorage.getItem("viewCountsTimestamp");
     // 缓存 5 分钟
-    if (cached && timestamp && Date.now() - parseInt(timestamp) < 5 * 60 * 1000) {
+    if (
+      cached &&
+      timestamp &&
+      Date.now() - parseInt(timestamp) < 5 * 60 * 1000
+    ) {
       return JSON.parse(cached);
     }
   } catch (e) {
@@ -90,7 +94,9 @@ export function markViewed(slug: string): void {
 /**
  * 验证批量查询响应数据格式
  */
-export function isValidBatchResponse(data: unknown): data is { success: boolean; views: Record<string, number> } {
+export function isValidBatchResponse(
+  data: unknown
+): data is { success: boolean; views: Record<string, number> } {
   if (!data || typeof data !== "object") return false;
   const d = data as Record<string, unknown>;
   return (
