@@ -168,14 +168,14 @@ const { frontmatter } = Astro.props;
         >
           <!-- Stats -->
           <div class="mb-4 flex items-center gap-4 text-xs text-foreground/60">
-            <span
-              ><strong class="text-foreground" id="contrib-total">0</strong> contributions
-              in the last year</span
+            <span id="contrib-summary"
+              ><strong class="text-foreground" id="contrib-total">0</strong>
+              contributions in the last year</span
             >
-            <span class="hidden sm:inline"
+            <span id="contrib-github-stat" class="hidden sm:inline"
               >GitHub: <strong id="contrib-github">0</strong></span
             >
-            <span class="hidden sm:inline"
+            <span id="contrib-gitcode-stat" class="hidden sm:inline"
               >GitCode: <strong id="contrib-gitcode">0</strong></span
             >
             <span
@@ -195,10 +195,40 @@ const { frontmatter } = Astro.props;
               <!-- Month labels and cells will be inserted here -->
             </svg>
           </div>
+          <!-- Source filter -->
+          <div
+            id="contrib-filter"
+            class="mt-4 flex items-center justify-end gap-1.5 text-xs"
+          >
+            <button type="button" class="contrib-filter-btn" data-source="all">
+              全部
+            </button>
+            <button
+              type="button"
+              class="contrib-filter-btn"
+              data-source="github"
+            >
+              GitHub
+            </button>
+            <button
+              type="button"
+              class="contrib-filter-btn"
+              data-source="gitcode"
+            >
+              GitCode
+            </button>
+            <button
+              type="button"
+              class="contrib-filter-btn"
+              data-source="gitlab"
+            >
+              GitLab
+            </button>
+          </div>
           <!-- Legend (动态渲染以适配主题) -->
           <div
             id="contrib-legend"
-            class="mt-4 flex items-center justify-end gap-2 text-xs text-foreground/50"
+            class="mt-2 flex items-center justify-end gap-2 text-xs text-foreground/50"
           >
             <span>Less</span>
             <span>More</span>
@@ -243,7 +273,50 @@ const { frontmatter } = Astro.props;
           // Tooltip element
           const tooltip = document.getElementById("contrib-tooltip");
 
-          function getColor(level, isDark) {
+          // 各来源品牌色阶（index 0=空格，1-4 由浅到深）
+          const SOURCE_COLORS = {
+            github: {
+              light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+              dark: ["#2d333b", "#0e4429", "#006d32", "#26a641", "#39d353"],
+            },
+            gitcode: {
+              light: ["#ebedf0", "#b3d4fc", "#69a9f6", "#3579e6", "#1c4fb3"],
+              dark: ["#2d333b", "#0d2f5c", "#164a99", "#1f6fd6", "#4b9bff"],
+            },
+            gitlab: {
+              light: ["#ebedf0", "#fdd8b5", "#fdac5c", "#fc8014", "#c65b0a"],
+              dark: ["#2d333b", "#5c2e0a", "#99500f", "#e0741a", "#fc9d4f"],
+            },
+          };
+          const SOURCE_LABELS = {
+            github: "GitHub",
+            gitcode: "GitCode",
+            gitlab: "GitLab",
+          };
+
+          // 当前选中的来源（single-select）；缓存上一次的数据用于纯前端切换
+          let lastData = null;
+          let activeSource = localStorage.getItem("contrib-source") || "all";
+
+          function countFor(day, source) {
+            if (source === "github") return day.githubCount || 0;
+            if (source === "gitcode") return day.gitcodeCount || 0;
+            if (source === "gitlab") return day.gitlabCount || 0;
+            return day.count || 0;
+          }
+
+          function totalFor(data, source) {
+            if (source === "github") return data.githubTotal || 0;
+            if (source === "gitcode") return data.gitcodeTotal || 0;
+            if (source === "gitlab") return data.gitlabTotal || 0;
+            return data.total || 0;
+          }
+
+          function getColor(level, isDark, source) {
+            if (source && source !== "all") {
+              const pal = SOURCE_COLORS[source][isDark ? "dark" : "light"];
+              return pal[level] || pal[0];
+            }
             if (level === 0) return isDark ? "#2d333b" : "#ebedf0";
             // 深色模式使用橙色，浅色模式使用蓝色
             const colors = isDark
@@ -283,10 +356,7 @@ const { frontmatter } = Astro.props;
           }
 
           function showTooltip(e, day) {
-            const count = day.count;
-            const githubCount = day.githubCount || 0;
-            const gitcodeCount = day.gitcodeCount || 0;
-            const gitlabCount = day.gitlabCount || 0;
+            const count = countFor(day, activeSource);
 
             // Build tooltip content
             const countText =
@@ -297,8 +367,12 @@ const { frontmatter } = Astro.props;
                   : `${count} contributions`;
             document.getElementById("tooltip-count").textContent = countText;
 
+            // 仅在"全部"视图展示各来源分解；单来源视图直接看总数即可
             let sourcesHtml = "";
-            if (githubCount > 0 || gitcodeCount > 0 || gitlabCount > 0) {
+            if (activeSource === "all") {
+              const githubCount = day.githubCount || 0;
+              const gitcodeCount = day.gitcodeCount || 0;
+              const gitlabCount = day.gitlabCount || 0;
               if (githubCount > 0)
                 sourcesHtml += `<span>GitHub: ${githubCount}</span>`;
               if (gitcodeCount > 0)
@@ -336,7 +410,7 @@ const { frontmatter } = Astro.props;
             tooltip.classList.remove("visible");
           }
 
-          function renderLegend() {
+          function renderLegend(source) {
             const legendContainer = document.getElementById("contrib-legend");
             const isDark =
               document.documentElement.getAttribute("data-theme") === "dark";
@@ -346,7 +420,7 @@ const { frontmatter } = Astro.props;
             for (let level = 0; level <= 4; level++) {
               const div = document.createElement("div");
               div.className = "w-3 h-3 rounded-sm";
-              div.style.backgroundColor = getColor(level, isDark);
+              div.style.backgroundColor = getColor(level, isDark, source);
               legendContainer.appendChild(div);
             }
 
@@ -356,22 +430,78 @@ const { frontmatter } = Astro.props;
           }
 
           function renderContributions(data) {
-            document.getElementById("contrib-total").textContent =
-              data.total.toLocaleString();
-            document.getElementById("contrib-github").textContent =
-              data.githubTotal.toLocaleString();
-            document.getElementById("contrib-gitcode").textContent =
-              data.gitcodeTotal.toLocaleString();
+            lastData = data;
+            updateFilterButtons();
+            renderView();
 
-            // GitLab 为可选来源：后端返回 gitlabTotal 时才显示该项
-            const gitlabTotal = data.gitlabTotal || 0;
-            document.getElementById("contrib-gitlab").textContent =
-              gitlabTotal.toLocaleString();
+            document.getElementById("contributions-skeleton").style.display =
+              "none";
+            document.getElementById("contributions-error").style.display =
+              "none";
+            document.getElementById("contributions-content").style.display =
+              "flex";
+          }
+
+          // 根据各来源是否有数据控制筛选按钮显隐；选中来源无数据时回退到"全部"
+          function updateFilterButtons() {
+            if (!lastData) return;
+            const avail = {
+              all: true,
+              github: totalFor(lastData, "github") > 0,
+              gitcode: totalFor(lastData, "gitcode") > 0,
+              gitlab: totalFor(lastData, "gitlab") > 0,
+            };
+            if (!avail[activeSource]) activeSource = "all";
+            document
+              .querySelectorAll("#contrib-filter .contrib-filter-btn")
+              .forEach(btn => {
+                btn.hidden = !avail[btn.dataset.source];
+              });
+          }
+
+          // 根据 activeSource 纯前端重绘（不重新请求网络）
+          function renderView() {
+            if (!lastData) return;
+            const data = lastData;
+            const source = activeSource;
+            const isDarkMode =
+              document.documentElement.getAttribute("data-theme") === "dark";
+
+            // 高亮选中的筛选按钮
+            document
+              .querySelectorAll("#contrib-filter .contrib-filter-btn")
+              .forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.source === source);
+              });
+
+            // 统计行：只显示当前来源的总数
+            document.getElementById("contrib-summary").innerHTML =
+              '<strong class="text-foreground">' +
+              totalFor(data, source).toLocaleString() +
+              "</strong> " +
+              (source === "all" ? "" : SOURCE_LABELS[source] + " ") +
+              "contributions in the last year";
+
+            // 各平台分项仅在"全部"视图展示
+            const showBreakdown = source === "all";
+            document.getElementById("contrib-github").textContent = (
+              data.githubTotal || 0
+            ).toLocaleString();
+            document.getElementById("contrib-gitcode").textContent = (
+              data.gitcodeTotal || 0
+            ).toLocaleString();
+            document.getElementById("contrib-gitlab").textContent = (
+              data.gitlabTotal || 0
+            ).toLocaleString();
+            document.getElementById("contrib-github-stat").style.display =
+              showBreakdown ? "" : "none";
+            document.getElementById("contrib-gitcode-stat").style.display =
+              showBreakdown ? "" : "none";
             document.getElementById("contrib-gitlab-stat").style.display =
-              gitlabTotal > 0 ? "" : "none";
+              showBreakdown && (data.gitlabTotal || 0) > 0 ? "" : "none";
 
-            // 渲染图例
-            renderLegend();
+            // 渲染图例（按当前来源配色）
+            renderLegend(source);
 
             const svg = document.getElementById("contrib-svg");
             svg.innerHTML = "";
@@ -432,22 +562,22 @@ const { frontmatter } = Astro.props;
             });
 
             // Contribution cells
-            const isDarkMode =
-              document.documentElement.getAttribute("data-theme") === "dark";
             data.weeks.forEach((week, weekIndex) => {
               week.forEach((day, dayIndex) => {
                 const rect = document.createElementNS(
                   "http://www.w3.org/2000/svg",
                   "rect"
                 );
+                const c = countFor(day, source);
+                const lvl = source === "all" ? day.level : levelForCount(c);
                 rect.setAttribute("x", 15 + weekIndex * (cellSize + cellGap));
                 rect.setAttribute("y", 25 + dayIndex * (cellSize + cellGap));
                 rect.setAttribute("width", cellSize);
                 rect.setAttribute("height", cellSize);
                 rect.setAttribute("rx", 2);
-                rect.setAttribute("fill", getColor(day.level, isDarkMode));
+                rect.setAttribute("fill", getColor(lvl, isDarkMode, source));
                 rect.setAttribute("class", "contrib-cell");
-                rect.setAttribute("data-level", day.level);
+                rect.setAttribute("data-level", lvl);
 
                 // Event listeners for tooltip
                 rect.addEventListener("mouseenter", e => showTooltip(e, day));
@@ -456,13 +586,6 @@ const { frontmatter } = Astro.props;
                 svg.appendChild(rect);
               });
             });
-
-            document.getElementById("contributions-skeleton").style.display =
-              "none";
-            document.getElementById("contributions-error").style.display =
-              "none";
-            document.getElementById("contributions-content").style.display =
-              "flex";
           }
 
           async function fetchContributions() {
@@ -586,6 +709,17 @@ const { frontmatter } = Astro.props;
             .getElementById("retry-btn")
             .addEventListener("click", fetchContributions);
 
+          // 来源筛选按钮：单选，纯前端切换视图
+          document
+            .querySelectorAll("#contrib-filter .contrib-filter-btn")
+            .forEach(btn => {
+              btn.addEventListener("click", () => {
+                activeSource = btn.dataset.source;
+                localStorage.setItem("contrib-source", activeSource);
+                renderView();
+              });
+            });
+
           function _renderMockData() {
             // Generate mock data for fallback
             const weeks = [];
@@ -659,6 +793,52 @@ const { frontmatter } = Astro.props;
 
   <style is:global>
     /* Contribution Heatmap Styles */
+    .contrib-filter-btn {
+      padding: 2px 10px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--foreground);
+      opacity: 0.55;
+      line-height: 1.4;
+      cursor: pointer;
+      transition:
+        opacity 0.15s ease,
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    .contrib-filter-btn:hover {
+      opacity: 1;
+    }
+
+    .contrib-filter-btn.active {
+      opacity: 1;
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .contrib-filter-btn.active[data-source="all"] {
+      background: var(--accent);
+    }
+
+    .contrib-filter-btn.active[data-source="github"] {
+      background: #2ea44f;
+    }
+
+    .contrib-filter-btn.active[data-source="gitcode"] {
+      background: #1f6feb;
+    }
+
+    .contrib-filter-btn.active[data-source="gitlab"] {
+      background: #fc6d26;
+    }
+
+    .contrib-filter-btn[hidden] {
+      display: none;
+    }
+
     .contribution-wrapper {
       display: flex;
       flex-direction: column;
