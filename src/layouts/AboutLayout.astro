@@ -355,6 +355,21 @@ const { frontmatter } = Astro.props;
             });
           }
 
+          function todayDateStr() {
+            return new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Asia/Shanghai",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }).format(new Date());
+          }
+
+          function lastHeatmapDate(data) {
+            const lastWeek = data?.weeks?.[data.weeks.length - 1];
+            if (!lastWeek?.length) return null;
+            return lastWeek[lastWeek.length - 1]?.date || null;
+          }
+
           function showTooltip(e, day) {
             const count = countFor(day, activeSource);
 
@@ -596,8 +611,12 @@ const { frontmatter } = Astro.props;
             if (cached) {
               try {
                 const data = JSON.parse(cached);
+                const lastDate = lastHeatmapDate(data);
+                // 跨天：缓存未覆盖今天则丢弃，避免一直显示停在昨天的格子
+                const coversToday = lastDate && lastDate >= todayDateStr();
                 // Use stale data immediately (up to 24 hours old)
                 if (
+                  coversToday &&
                   data.cachedAt &&
                   Date.now() - data.cachedAt < 24 * 60 * 60 * 1000
                 ) {
@@ -661,11 +680,8 @@ const { frontmatter } = Astro.props;
                   if (cached) {
                     try {
                       const oldData = JSON.parse(cached);
-                      const oldLastDate =
-                        oldData.weeks[oldData.weeks.length - 1]?.[6]?.date;
-                      const newLastDate =
-                        result.data.weeks[result.data.weeks.length - 1]?.[6]
-                          ?.date;
+                      const oldLastDate = lastHeatmapDate(oldData);
+                      const newLastDate = lastHeatmapDate(result.data);
                       dataChanged =
                         oldData.total !== result.data.total ||
                         oldLastDate !== newLastDate ||
