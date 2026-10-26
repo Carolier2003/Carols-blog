@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download avatar from GitHub
-        # 下载到 /tmp，不直接覆盖仓库文件，避免工作区被弄脏影响后续判断
+        # 下载到 /tmp，不直接覆盖仓库文件：避免工作区被弄脏后 git diff 判断失真
         run: |
           curl -sfL -o /tmp/avatar.new.png "https://github.com/Carolier2003.png?size=200"
           file /tmp/avatar.new.png
@@ -28,22 +28,19 @@ jobs:
 
       - name: Check if avatar changed
         id: check
-        # 按像素比较而不是按文件字节比较：GitHub 的头像 CDN 会重新编码 PNG
-        # （同一张图、字节不同），用 git diff 判断会天天误报「有变化」。
+        # 按字节比较。GitHub 的 avatar CDN 偶尔会重新编码同一张图（像素不变、
+        # 字节不同），那时会多产生一次无意义的提交，随后重新稳定。
+        # 若要严格按像素判断，需先装 Pillow 或 ImageMagick（runner 默认两者都没有）。
         run: |
           if [ ! -f public/avatar.png ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if command -v compare >/dev/null 2>&1; then
-            diff_px=$(compare -metric AE public/avatar.png /tmp/avatar.new.png null: 2>&1 | awk '{print $1}')
-          else
-            cmp -s public/avatar.png /tmp/avatar.new.png && diff_px=0 || diff_px=1
-          fi
-          echo "不同像素数：${diff_px:-unknown}"
-          if [ "${diff_px:-0}" = "0" ]; then
+          if cmp -s public/avatar.png /tmp/avatar.new.png; then
+            echo "avatar 未变化，跳过提交"
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
+            echo "avatar 有变化"
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
